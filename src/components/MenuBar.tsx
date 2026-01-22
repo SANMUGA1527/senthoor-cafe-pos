@@ -36,24 +36,29 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Keyboard shortcut: Press "1" to select first item
+  // Keyboard shortcuts: Press 1-9 to select items by position
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Don't trigger if typing in an input
+      // Don't trigger if typing in an input or dialog is open
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      if (quantityDialogOpen || addDialogOpen) return;
       
-      if (e.key === '1' && filteredItems.length > 0) {
-        e.preventDefault();
-        setSelectedItem(filteredItems[0]);
-        setQuantity('1');
-        setQuantityDialogOpen(true);
+      const keyNum = parseInt(e.key);
+      if (keyNum >= 1 && keyNum <= 9) {
+        const itemIndex = keyNum - 1;
+        if (filteredItems[itemIndex]) {
+          e.preventDefault();
+          setSelectedItem(filteredItems[itemIndex]);
+          setQuantity('1');
+          setQuantityDialogOpen(true);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [filteredItems]);
+  }, [filteredItems, quantityDialogOpen, addDialogOpen]);
 
   const handleStartEdit = (item: MenuItem) => {
     setEditingId(item.id);
@@ -146,7 +151,7 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
             ref={searchInputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search menu items... (Press 1 for quick add)"
+            placeholder="Search menu items... (Press 1-9 for quick add)"
             className="pl-10"
           />
         </div>
@@ -204,8 +209,8 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
                   >
                     <div className="veg-indicator flex-shrink-0" />
                     <div className="flex items-center gap-2">
-                      {index === 0 && (
-                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">1</span>
+                      {index < 9 && (
+                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono min-w-[20px] text-center">{index + 1}</span>
                       )}
                       <span className="font-medium text-sm">{item.name}</span>
                     </div>
