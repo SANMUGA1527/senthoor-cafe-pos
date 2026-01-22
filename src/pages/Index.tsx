@@ -2,16 +2,13 @@ import { useState, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
-import CategoryTabs from '@/components/CategoryTabs';
-import MenuGrid from '@/components/MenuGrid';
+import MenuBar from '@/components/MenuBar';
 import BillSummary from '@/components/BillSummary';
 import PrintableBill from '@/components/PrintableBill';
-import AddItemDialog from '@/components/AddItemDialog';
 import { MenuItem, BillItem } from '@/types/billing';
 import { menuItems as initialMenuItems } from '@/data/menuItems';
 
 const Index = () => {
-  const [activeCategory, setActiveCategory] = useState('starters');
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const printRef = useRef<HTMLDivElement>(null);
@@ -65,27 +62,36 @@ const Index = () => {
     toast.success(`${newItem.name} added to menu!`);
   };
 
+  const handleUpdateMenuItem = (id: string, updates: Partial<MenuItem>) => {
+    setMenuItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, ...updates } : item
+      )
+    );
+    toast.success('Menu item updated!');
+  };
+
+  const handleDeleteMenuItem = (id: string) => {
+    setMenuItems(prev => prev.filter(item => item.id !== id));
+    // Also remove from bill if present
+    setBillItems(prev => prev.filter(item => item.id !== id));
+    toast.info('Menu item deleted');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <main className="max-w-7xl mx-auto p-4 lg:p-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Menu Section */}
-          <div className="flex-1 space-y-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h2 className="text-xl font-semibold">Menu</h2>
-              <AddItemDialog onAddMenuItem={handleAddMenuItem} />
-            </div>
-            
-            <CategoryTabs 
-              activeCategory={activeCategory} 
-              onCategoryChange={setActiveCategory} 
-            />
-            
-            <MenuGrid 
-              activeCategory={activeCategory} 
+          {/* Menu Section - Single Bar */}
+          <div className="flex-1">
+            <MenuBar 
+              items={menuItems}
               onAddItem={handleAddItem}
+              onUpdateMenuItem={handleUpdateMenuItem}
+              onDeleteMenuItem={handleDeleteMenuItem}
+              onAddNewItem={handleAddMenuItem}
             />
           </div>
 

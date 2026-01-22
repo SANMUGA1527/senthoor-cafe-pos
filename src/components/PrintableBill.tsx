@@ -8,9 +8,7 @@ interface PrintableBillProps {
 
 const PrintableBill = forwardRef<HTMLDivElement, PrintableBillProps>(
   ({ items, billNumber }, ref) => {
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const gst = subtotal * 0.05;
-    const total = subtotal + gst;
+    const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     return (
       <div ref={ref} className="p-8 bg-white text-black max-w-md mx-auto" style={{ fontFamily: 'monospace' }}>
@@ -49,17 +47,9 @@ const PrintableBill = forwardRef<HTMLDivElement, PrintableBillProps>(
           ))}
         </div>
 
-        {/* Totals */}
+        {/* Total - No GST */}
         <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span>Subtotal:</span>
-            <span>₹{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>GST (5%):</span>
-            <span>₹{gst.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between font-bold text-lg border-t border-dashed border-black pt-2 mt-2">
+          <div className="flex justify-between font-bold text-lg border-t border-dashed border-black pt-2">
             <span>TOTAL:</span>
             <span>₹{total.toFixed(2)}</span>
           </div>
