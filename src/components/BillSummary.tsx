@@ -18,10 +18,7 @@ const BillSummary = ({
   onClearBill,
   onPrintBill 
 }: BillSummaryProps) => {
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const gstRate = 0.05; // 5% GST
-  const gst = subtotal * gstRate;
-  const total = subtotal + gst;
+  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
     <div className="bg-card border border-border rounded-2xl h-full flex flex-col">
@@ -70,19 +67,11 @@ const BillSummary = ({
         )}
       </div>
 
-      {/* Totals */}
+      {/* Totals - No GST */}
       {items.length > 0 && (
         <div className="p-4 border-t border-border bg-muted/30 rounded-b-2xl">
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span>₹{subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">GST (5%)</span>
-              <span>₹{gst.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
+          <div className="mb-4">
+            <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
               <span className="text-primary">₹{total.toFixed(2)}</span>
             </div>
