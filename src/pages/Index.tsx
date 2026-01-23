@@ -5,18 +5,31 @@ import Header from '@/components/Header';
 import MenuBar from '@/components/MenuBar';
 import BillSummary from '@/components/BillSummary';
 import PrintableBill from '@/components/PrintableBill';
-import { MenuItem, BillItem } from '@/types/billing';
+import BillHistory from '@/components/BillHistory';
+import { MenuItem, BillItem, Bill } from '@/types/billing';
 import { menuItems as initialMenuItems } from '@/data/menuItems';
 
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const [billHistory, setBillHistory] = useState<Bill[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
   const [billNumber, setBillNumber] = useState(`BL${Date.now().toString().slice(-6)}`);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     onAfterPrint: () => {
+      // Save to history before clearing
+      const total = billItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const newBill: Bill = {
+        items: [...billItems],
+        subtotal: total,
+        gst: 0,
+        total: total,
+        billNumber,
+        date: new Date(),
+      };
+      setBillHistory(prev => [newBill, ...prev]);
       toast.success('Bill printed successfully!');
       handleClearBill();
     },
@@ -80,7 +93,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header billHistory={<BillHistory bills={billHistory} />} />
       
       <main className="max-w-7xl mx-auto p-4 lg:p-6">
         <div className="flex flex-col lg:flex-row gap-6">

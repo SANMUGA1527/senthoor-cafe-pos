@@ -1,6 +1,11 @@
 import { Leaf } from 'lucide-react';
+import { ReactNode } from 'react';
 
-const Header = () => {
+interface HeaderProps {
+  billHistory?: ReactNode;
+}
+
+const Header = ({ billHistory }: HeaderProps) => {
   return (
     <header className="header-gradient text-primary-foreground py-4 px-6 shadow-warm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -18,16 +23,19 @@ const Header = () => {
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-sm opacity-75">Billing System</p>
-          <p className="text-xs opacity-60">
-            {new Date().toLocaleDateString('en-IN', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </p>
+        <div className="flex items-center gap-4">
+          {billHistory}
+          <div className="text-right">
+            <p className="text-sm opacity-75">Billing System</p>
+            <p className="text-xs opacity-60">
+              {new Date().toLocaleDateString('en-IN', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+          </div>
         </div>
       </div>
     </header>
