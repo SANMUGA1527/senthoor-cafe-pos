@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
@@ -26,34 +26,6 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [quantity, setQuantity] = useState('1');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Keyboard shortcut: Press "1" to select first item
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Don't trigger if typing in an input
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-      
-      if (e.key === '1' && filteredItems.length > 0) {
-        e.preventDefault();
-        setSelectedItem(filteredItems[0]);
-        setQuantity('1');
-        setQuantityDialogOpen(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [filteredItems]);
 
   const handleStartEdit = (item: MenuItem) => {
     setEditingId(item.id);
@@ -90,188 +62,122 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
     }
   };
 
-  const handleQuantitySubmit = () => {
-    if (selectedItem && parseInt(quantity) > 0) {
-      for (let i = 0; i < parseInt(quantity); i++) {
-        onAddItem(selectedItem);
-      }
-      setQuantityDialogOpen(false);
-      setSelectedItem(null);
-      setQuantity('1');
-    }
-  };
-
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
-      {/* Header with Search */}
-      <div className="p-4 border-b border-border bg-muted/30 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Menu Items</h2>
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Item
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-card">
-              <DialogHeader>
-                <DialogTitle>Add New Menu Item</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddNew} className="space-y-4">
-                <Input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Item name"
-                  required
-                />
-                <Input
-                  type="number"
-                  min="1"
-                  value={newPrice}
-                  onChange={(e) => setNewPrice(e.target.value)}
-                  placeholder="Price (₹)"
-                  required
-                />
-                <Button type="submit" className="w-full">Add to Menu</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-        
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            ref={searchInputRef}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search menu items... (Press 1 for quick add)"
-            className="pl-10"
-          />
-        </div>
-      </div>
-
-      {/* Menu Items List */}
-      <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
-        {filteredItems.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No items found</p>
-          </div>
-        ) : (
-          filteredItems.map((item, index) => (
-            <div 
-              key={item.id}
-              className="flex items-center justify-between p-3 border-b border-border last:border-0 hover:bg-muted/30 transition-colors group"
-            >
-              {editingId === item.id ? (
-                /* Edit Mode */
-                <div className="flex items-center gap-2 flex-1">
-                  <div className="veg-indicator flex-shrink-0" />
-                  <Input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="flex-1 h-8"
-                    autoFocus
-                  />
-                  <Input
-                    type="number"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(e.target.value)}
-                    className="w-20 h-8"
-                    min="1"
-                  />
-                  <button
-                    onClick={() => handleSaveEdit(item.id)}
-                    className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                /* View Mode */
-                <>
-                  <div 
-                    className="flex items-center gap-3 flex-1 cursor-pointer"
-                    onClick={() => onAddItem(item)}
-                  >
-                    <div className="veg-indicator flex-shrink-0" />
-                    <div className="flex items-center gap-2">
-                      {index === 0 && (
-                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">1</span>
-                      )}
-                      <span className="font-medium text-sm">{item.name}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-primary mr-2">₹{item.price}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStartEdit(item);
-                      }}
-                      className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteMenuItem(item.id);
-                      }}
-                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onAddItem(item)}
-                      className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1.5 rounded-lg transition-all"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Quantity Dialog */}
-      <Dialog open={quantityDialogOpen} onOpenChange={setQuantityDialogOpen}>
-        <DialogContent className="sm:max-w-xs bg-card">
-          <DialogHeader>
-            <DialogTitle>Add {selectedItem?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm text-muted-foreground mb-1 block">Quantity</label>
+      {/* Header */}
+      <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
+        <h2 className="font-semibold text-lg">Menu Items</h2>
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="gap-2">
+              <Plus className="w-4 h-4" />
+              Add Item
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md bg-card">
+            <DialogHeader>
+              <DialogTitle>Add New Menu Item</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleAddNew} className="space-y-4">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Item name"
+                required
+              />
               <Input
                 type="number"
                 min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleQuantitySubmit();
-                  }
-                }}
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                placeholder="Price (₹)"
+                required
               />
-            </div>
-            <Button onClick={handleQuantitySubmit} className="w-full">
-              Add to Bill - ₹{selectedItem ? selectedItem.price * parseInt(quantity || '0') : 0}
-            </Button>
+              <Button type="submit" className="w-full">Add to Menu</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Menu Items List */}
+      <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+        {items.map((item) => (
+          <div 
+            key={item.id}
+            className="flex items-center justify-between p-3 border-b border-border last:border-0 hover:bg-muted/30 transition-colors group"
+          >
+            {editingId === item.id ? (
+              /* Edit Mode */
+              <div className="flex items-center gap-2 flex-1">
+                <div className="veg-indicator flex-shrink-0" />
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="flex-1 h-8"
+                  autoFocus
+                />
+                <Input
+                  type="number"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                  className="w-20 h-8"
+                  min="1"
+                />
+                <button
+                  onClick={() => handleSaveEdit(item.id)}
+                  className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              /* View Mode */
+              <>
+                <div 
+                  className="flex items-center gap-3 flex-1 cursor-pointer"
+                  onClick={() => onAddItem(item)}
+                >
+                  <div className="veg-indicator flex-shrink-0" />
+                  <span className="font-medium text-sm">{item.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-primary mr-2">₹{item.price}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartEdit(item);
+                    }}
+                    className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteMenuItem(item.id);
+                    }}
+                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => onAddItem(item)}
+                    className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1.5 rounded-lg transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-        </DialogContent>
-      </Dialog>
+        ))}
+      </div>
     </div>
   );
 };
