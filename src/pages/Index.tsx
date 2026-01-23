@@ -8,18 +8,19 @@ import PrintableBill from '@/components/PrintableBill';
 import BillHistory from '@/components/BillHistory';
 import { MenuItem, BillItem, Bill } from '@/types/billing';
 import { menuItems as initialMenuItems } from '@/data/menuItems';
+import { useBillHistory } from '@/hooks/useBillHistory';
 
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [billHistory, setBillHistory] = useState<Bill[]>([]);
+  const { billHistory, saveBill } = useBillHistory();
   const printRef = useRef<HTMLDivElement>(null);
   const [billNumber, setBillNumber] = useState(`BL${Date.now().toString().slice(-6)}`);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    onAfterPrint: () => {
-      // Save to history before clearing
+    onAfterPrint: async () => {
+      // Save to database before clearing
       const total = billItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       const newBill: Bill = {
         items: [...billItems],
@@ -29,8 +30,8 @@ const Index = () => {
         billNumber,
         date: new Date(),
       };
-      setBillHistory(prev => [newBill, ...prev]);
-      toast.success('Bill printed successfully!');
+      await saveBill(newBill);
+      toast.success('Bill printed and saved!');
       handleClearBill();
     },
   });
