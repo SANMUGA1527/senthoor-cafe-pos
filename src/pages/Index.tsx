@@ -5,7 +5,11 @@ import Header from '@/components/Header';
 import MenuBar from '@/components/MenuBar';
 import BillSummary from '@/components/BillSummary';
 import PrintableBill from '@/components/PrintableBill';
+<<<<<<< HEAD
 import BillHistory from '@/components/BillHistory';
+=======
+
+>>>>>>> 9969471 (Sync local changes: Update MenuBar, Index, and BillItem)
 import { MenuItem, BillItem, Bill } from '@/types/billing';
 import { menuItems as initialMenuItems } from '@/data/menuItems';
 import { useBillHistory } from '@/hooks/useBillHistory';
@@ -17,8 +21,30 @@ const Index = () => {
   const printRef = useRef<HTMLDivElement>(null);
   const [billNumber, setBillNumber] = useState(`BL${Date.now().toString().slice(-6)}`);
 
+
+  const saveBillToHistory = () => {
+    const total = billItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const bill: Bill = {
+      items: billItems,
+      subtotal: total,
+      gst: 0, // Assuming 0 for now as per current simple logic
+      total: total,
+      billNumber: billNumber,
+      date: new Date()
+    };
+
+    const today = new Date().toISOString().split('T')[0];
+    const storageKey = `pos_sales_${today}`;
+    const existingData = localStorage.getItem(storageKey);
+    const bills: Bill[] = existingData ? JSON.parse(existingData) : [];
+
+    bills.push(bill);
+    localStorage.setItem(storageKey, JSON.stringify(bills));
+  };
+
   const handlePrint = useReactToPrint({
     contentRef: printRef,
+<<<<<<< HEAD
     onAfterPrint: async () => {
       // Save to database before clearing
       const total = billItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -31,6 +57,10 @@ const Index = () => {
         date: new Date(),
       };
       await saveBill(newBill);
+=======
+    onAfterPrint: () => {
+      saveBillToHistory();
+>>>>>>> 9969471 (Sync local changes: Update MenuBar, Index, and BillItem)
       toast.success('Bill printed and saved!');
       handleClearBill();
     },
@@ -40,7 +70,7 @@ const Index = () => {
     setBillItems(prev => {
       const existingItem = prev.find(i => i.id === item.id);
       if (existingItem) {
-        return prev.map(i => 
+        return prev.map(i =>
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
@@ -54,8 +84,8 @@ const Index = () => {
       handleRemoveItem(id);
       return;
     }
-    setBillItems(prev => 
-      prev.map(item => 
+    setBillItems(prev =>
+      prev.map(item =>
         item.id === id ? { ...item, quantity } : item
       )
     );
@@ -77,8 +107,8 @@ const Index = () => {
   };
 
   const handleUpdateMenuItem = (id: string, updates: Partial<MenuItem>) => {
-    setMenuItems(prev => 
-      prev.map(item => 
+    setMenuItems(prev =>
+      prev.map(item =>
         item.id === id ? { ...item, ...updates } : item
       )
     );
@@ -94,13 +124,21 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+<<<<<<< HEAD
       <Header billHistory={<BillHistory bills={billHistory} />} />
       
+=======
+      <div className="relative">
+        <Header />
+
+      </div>
+
+>>>>>>> 9969471 (Sync local changes: Update MenuBar, Index, and BillItem)
       <main className="max-w-7xl mx-auto p-4 lg:p-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Menu Section - Single Bar */}
           <div className="flex-1">
-            <MenuBar 
+            <MenuBar
               items={menuItems}
               onAddItem={handleAddItem}
               onUpdateMenuItem={handleUpdateMenuItem}
@@ -111,7 +149,7 @@ const Index = () => {
 
           {/* Bill Section */}
           <div className="lg:w-96 lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)]">
-            <BillSummary 
+            <BillSummary
               items={billItems}
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
@@ -124,12 +162,13 @@ const Index = () => {
 
       {/* Hidden Printable Bill */}
       <div className="hidden">
-        <PrintableBill 
+        <PrintableBill
           ref={printRef}
           items={billItems}
           billNumber={billNumber}
         />
       </div>
+
     </div>
   );
 };
