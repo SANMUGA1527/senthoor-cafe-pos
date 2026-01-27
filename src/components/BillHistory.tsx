@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { History, Eye, Download, Calendar } from 'lucide-react';
+import { History, Eye, Download, Calendar, FileText } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { jsPDF } from 'jspdf';
 import { Bill } from '@/types/billing';
 import { Button } from './ui/button';
 import {
@@ -33,7 +34,7 @@ interface BillHistoryProps {
   bills: Bill[];
 }
 
-type FilterType = 'all' | 'day' | 'month';
+type FilterType = 'all' | 'day' | 'month' | 'range';
 
 const BillHistory = ({ bills }: BillHistoryProps) => {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
@@ -41,6 +42,8 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   // Get available months from bills
   const availableMonths = useMemo(() => {
@@ -72,9 +75,17 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
         isWithinInterval(new Date(bill.date), { start: monthStart, end: monthEnd })
       );
     }
+
+    if (filterType === 'range' && startDate && endDate) {
+      const rangeStart = startOfDay(startDate);
+      const rangeEnd = endOfDay(endDate);
+      return bills.filter(bill => 
+        isWithinInterval(new Date(bill.date), { start: rangeStart, end: rangeEnd })
+      );
+    }
     
     return bills;
-  }, [bills, filterType, selectedDate, selectedMonth]);
+  }, [bills, filterType, selectedDate, selectedMonth, startDate, endDate]);
 
   // Calculate totals for filtered bills
   const filteredTotal = useMemo(() => {
@@ -110,6 +121,92 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     link.setAttribute('download', `${filename}.csv`);
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Download as PDF with receipt layout
+  const downloadPDF = (bill: Bill) => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: [80, 200] // Receipt width
+    });
+
+    const pageWidth = 80;
+    let y = 10;
+
+    // Header
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SRI SENTHOOR', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('& Cafe 77', pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    doc.setFontSize(8);
+    doc.text('★ Pure Vegetarian ★', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    doc.text('123 Main Street, City', pageWidth / 2, y, { align: 'center' });
+    y += 3;
+    doc.text('Phone: +91 98765 43210', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+
+    // Dashed line
+    doc.setLineDashPattern([1, 1], 0);
+    doc.line(5, y, pageWidth - 5, y);
+    y += 5;
+
+    // Bill info
+    doc.setFontSize(8);
+    doc.text(`Bill No: ${bill.billNumber}`, 5, y);
+    doc.text(format(new Date(bill.date), 'dd/MM/yyyy HH:mm'), pageWidth - 5, y, { align: 'right' });
+    y += 5;
+
+    // Dashed line
+    doc.line(5, y, pageWidth - 5, y);
+    y += 5;
+
+    // Items header
+    doc.setFont('helvetica', 'bold');
+    doc.text('Item', 5, y);
+    doc.text('Qty', 45, y, { align: 'center' });
+    doc.text('Amt', pageWidth - 5, y, { align: 'right' });
+    y += 4;
+
+    // Items
+    doc.setFont('helvetica', 'normal');
+    bill.items.forEach(item => {
+      const itemName = item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name;
+      doc.text(itemName, 5, y);
+      doc.text(item.quantity.toString(), 45, y, { align: 'center' });
+      doc.text(`₹${(item.price * item.quantity).toFixed(0)}`, pageWidth - 5, y, { align: 'right' });
+      y += 4;
+    });
+
+    y += 2;
+    // Dashed line
+    doc.line(5, y, pageWidth - 5, y);
+    y += 5;
+
+    // Total
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL:', 5, y);
+    doc.text(`₹${bill.total.toFixed(2)}`, pageWidth - 5, y, { align: 'right' });
+    y += 6;
+
+    // Dashed line
+    doc.setFontSize(8);
+    doc.line(5, y, pageWidth - 5, y);
+    y += 5;
+
+    // Footer
+    doc.setFont('helvetica', 'normal');
+    doc.text('Thank you for dining with us!', pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    doc.text('Visit Again ❤', pageWidth / 2, y, { align: 'center' });
+
+    doc.save(`bill_${bill.billNumber}.pdf`);
   };
 
   const formatDate = (date: Date) => {
@@ -153,6 +250,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
               <SelectItem value="all">All Bills</SelectItem>
               <SelectItem value="day">By Day</SelectItem>
               <SelectItem value="month">By Month</SelectItem>
+              <SelectItem value="range">Date Range</SelectItem>
             </SelectContent>
           </Select>
 
@@ -201,6 +299,60 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
                 )}
               </SelectContent>
             </Select>
+          )}
+
+          {filterType === 'range' && (
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "w-[130px] justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd MMM yy") : "Start"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-muted-foreground">to</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "w-[130px] justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd MMM yy") : "End"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
 
           <div className="flex-1" />
@@ -259,12 +411,22 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
                       ₹{bill.total.toFixed(2)}
                     </TableCell>
                     <TableCell>
-                      <button
-                        onClick={() => viewBillDetails(bill)}
-                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => viewBillDetails(bill)}
+                          className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="View details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => downloadPDF(bill)}
+                          className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="Download PDF"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
