@@ -1,9 +1,17 @@
 import { useState, useMemo } from 'react';
-import { History, Eye, Download, Calendar, FileText } from 'lucide-react';
+import { History, Eye, Download, Calendar, FileText, FileArchive } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { jsPDF } from 'jspdf';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { Bill } from '@/types/billing';
 import { Button } from './ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -123,18 +131,17 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     URL.revokeObjectURL(url);
   };
 
-  // Download as PDF with receipt layout
-  const downloadPDF = (bill: Bill) => {
+  // Generate PDF for a bill and return the doc
+  const generateBillPDF = (bill: Bill): jsPDF => {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: [80, 200] // Receipt width
+      format: [80, 200]
     });
 
     const pageWidth = 80;
     let y = 10;
 
-    // Header
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text('SRI SENTHOOR', pageWidth / 2, y, { align: 'center' });
@@ -151,29 +158,24 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     doc.text('Phone: +91 98765 43210', pageWidth / 2, y, { align: 'center' });
     y += 5;
 
-    // Dashed line
     doc.setLineDashPattern([1, 1], 0);
     doc.line(5, y, pageWidth - 5, y);
     y += 5;
 
-    // Bill info
     doc.setFontSize(8);
     doc.text(`Bill No: ${bill.billNumber}`, 5, y);
     doc.text(format(new Date(bill.date), 'dd/MM/yyyy HH:mm'), pageWidth - 5, y, { align: 'right' });
     y += 5;
 
-    // Dashed line
     doc.line(5, y, pageWidth - 5, y);
     y += 5;
 
-    // Items header
     doc.setFont('helvetica', 'bold');
     doc.text('Item', 5, y);
     doc.text('Qty', 45, y, { align: 'center' });
     doc.text('Amt', pageWidth - 5, y, { align: 'right' });
     y += 4;
 
-    // Items
     doc.setFont('helvetica', 'normal');
     bill.items.forEach(item => {
       const itemName = item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name;
@@ -184,29 +186,160 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     });
 
     y += 2;
-    // Dashed line
     doc.line(5, y, pageWidth - 5, y);
     y += 5;
 
-    // Total
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('TOTAL:', 5, y);
     doc.text(`₹${bill.total.toFixed(2)}`, pageWidth - 5, y, { align: 'right' });
     y += 6;
 
-    // Dashed line
     doc.setFontSize(8);
     doc.line(5, y, pageWidth - 5, y);
     y += 5;
 
-    // Footer
     doc.setFont('helvetica', 'normal');
     doc.text('Thank you for dining with us!', pageWidth / 2, y, { align: 'center' });
     y += 4;
     doc.text('Visit Again ❤', pageWidth / 2, y, { align: 'center' });
 
+    return doc;
+  };
+
+  // Download single bill as PDF
+  const downloadPDF = (bill: Bill) => {
+    const doc = generateBillPDF(bill);
     doc.save(`bill_${bill.billNumber}.pdf`);
+  };
+
+  // Download all filtered bills as a single combined PDF
+  const downloadAllAsSinglePDF = () => {
+    if (filteredBills.length === 0) return;
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const receiptWidth = 80;
+    const margin = 10;
+    let currentX = margin;
+    let currentY = margin;
+    const receiptsPerRow = 2;
+    let receiptCount = 0;
+
+    filteredBills.forEach((bill, index) => {
+      // Calculate receipt height based on items
+      const receiptHeight = 80 + (bill.items.length * 4);
+      
+      // Check if we need a new row or page
+      if (receiptCount > 0 && receiptCount % receiptsPerRow === 0) {
+        currentX = margin;
+        currentY += receiptHeight + 10;
+      }
+      
+      if (currentY + receiptHeight > pageHeight - margin) {
+        doc.addPage();
+        currentX = margin;
+        currentY = margin;
+        receiptCount = 0;
+      }
+
+      let y = currentY;
+      const x = currentX;
+
+      // Header
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SRI SENTHOOR', x + receiptWidth / 2, y, { align: 'center' });
+      y += 4;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('& Cafe 77', x + receiptWidth / 2, y, { align: 'center' });
+      y += 3;
+      doc.setFontSize(7);
+      doc.text('★ Pure Vegetarian ★', x + receiptWidth / 2, y, { align: 'center' });
+      y += 5;
+
+      // Border
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(x, currentY - 3, receiptWidth, receiptHeight);
+
+      // Bill info
+      doc.setFontSize(7);
+      doc.text(`Bill: ${bill.billNumber}`, x + 3, y);
+      doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), x + receiptWidth - 3, y, { align: 'right' });
+      y += 4;
+
+      // Line
+      doc.setLineDashPattern([1, 1], 0);
+      doc.line(x + 3, y, x + receiptWidth - 3, y);
+      y += 3;
+
+      // Items
+      doc.setFontSize(6);
+      bill.items.forEach(item => {
+        const itemName = item.name.length > 18 ? item.name.substring(0, 18) + '..' : item.name;
+        doc.text(itemName, x + 3, y);
+        doc.text(`${item.quantity}`, x + 50, y, { align: 'center' });
+        doc.text(`₹${(item.price * item.quantity).toFixed(0)}`, x + receiptWidth - 3, y, { align: 'right' });
+        y += 3;
+      });
+
+      y += 2;
+      doc.line(x + 3, y, x + receiptWidth - 3, y);
+      y += 4;
+
+      // Total
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TOTAL:', x + 3, y);
+      doc.text(`₹${bill.total.toFixed(2)}`, x + receiptWidth - 3, y, { align: 'right' });
+
+      currentX += receiptWidth + 10;
+      receiptCount++;
+    });
+
+    let filename = 'all_bills';
+    if (filterType === 'day' && selectedDate) {
+      filename = `bills_${format(selectedDate, 'yyyy-MM-dd')}`;
+    } else if (filterType === 'month' && selectedMonth) {
+      filename = `bills_${selectedMonth}`;
+    } else if (filterType === 'range' && startDate && endDate) {
+      filename = `bills_${format(startDate, 'yyyy-MM-dd')}_to_${format(endDate, 'yyyy-MM-dd')}`;
+    }
+
+    doc.save(`${filename}.pdf`);
+  };
+
+  // Download all filtered bills as ZIP
+  const downloadAllAsZIP = async () => {
+    if (filteredBills.length === 0) return;
+
+    const zip = new JSZip();
+    
+    filteredBills.forEach(bill => {
+      const doc = generateBillPDF(bill);
+      const pdfBlob = doc.output('blob');
+      zip.file(`bill_${bill.billNumber}.pdf`, pdfBlob);
+    });
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    
+    let filename = 'all_bills';
+    if (filterType === 'day' && selectedDate) {
+      filename = `bills_${format(selectedDate, 'yyyy-MM-dd')}`;
+    } else if (filterType === 'month' && selectedMonth) {
+      filename = `bills_${selectedMonth}`;
+    } else if (filterType === 'range' && startDate && endDate) {
+      filename = `bills_${format(startDate, 'yyyy-MM-dd')}_to_${format(endDate, 'yyyy-MM-dd')}`;
+    }
+
+    saveAs(zipBlob, `${filename}.zip`);
   };
 
   const formatDate = (date: Date) => {
@@ -357,16 +490,42 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
 
           <div className="flex-1" />
 
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={downloadCSV}
-            disabled={filteredBills.length === 0}
-            className="gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Download CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={downloadCSV}
+              disabled={filteredBills.length === 0}
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              CSV
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={filteredBills.length === 0}
+                  className="gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  PDF ({filteredBills.length})
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card">
+                <DropdownMenuItem onClick={downloadAllAsSinglePDF} className="gap-2 cursor-pointer">
+                  <FileText className="w-4 h-4" />
+                  Single PDF (all receipts)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={downloadAllAsZIP} className="gap-2 cursor-pointer">
+                  <FileArchive className="w-4 h-4" />
+                  ZIP (individual PDFs)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Summary */}
