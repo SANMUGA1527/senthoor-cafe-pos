@@ -213,7 +213,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     doc.save(`bill_${bill.billNumber}.pdf`);
   };
 
-  // Download all filtered bills as a single combined PDF
+  // Download all filtered bills as a single combined PDF (list format)
   const downloadAllAsSinglePDF = () => {
     if (filteredBills.length === 0) return;
 
@@ -225,84 +225,131 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
 
     const pageWidth = 210;
     const pageHeight = 297;
-    const receiptWidth = 80;
-    const margin = 10;
-    let currentX = margin;
-    let currentY = margin;
-    const receiptsPerRow = 2;
-    let receiptCount = 0;
+    const margin = 15;
+    let y = margin;
 
-    filteredBills.forEach((bill, index) => {
-      // Calculate receipt height based on items
-      const receiptHeight = 80 + (bill.items.length * 4);
-      
-      // Check if we need a new row or page
-      if (receiptCount > 0 && receiptCount % receiptsPerRow === 0) {
-        currentX = margin;
-        currentY += receiptHeight + 10;
-      }
-      
-      if (currentY + receiptHeight > pageHeight - margin) {
-        doc.addPage();
-        currentX = margin;
-        currentY = margin;
-        receiptCount = 0;
-      }
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SRI SENTHOOR', pageWidth / 2, y, { align: 'center' });
+    y += 6;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('& Cafe 77', pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    doc.setFontSize(10);
+    doc.text('★ Pure Vegetarian ★', pageWidth / 2, y, { align: 'center' });
+    y += 8;
 
-      let y = currentY;
-      const x = currentX;
+    // Date range info
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    let dateInfo = 'All Bills';
+    if (filterType === 'day' && selectedDate) {
+      dateInfo = `Bills for ${format(selectedDate, 'dd MMMM yyyy')}`;
+    } else if (filterType === 'month' && selectedMonth) {
+      dateInfo = `Bills for ${format(new Date(selectedMonth + '-01'), 'MMMM yyyy')}`;
+    } else if (filterType === 'range' && startDate && endDate) {
+      dateInfo = `Bills from ${format(startDate, 'dd MMM yyyy')} to ${format(endDate, 'dd MMM yyyy')}`;
+    }
+    doc.text(dateInfo, pageWidth / 2, y, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    y += 10;
 
-      // Header
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('SRI SENTHOOR', x + receiptWidth / 2, y, { align: 'center' });
-      y += 4;
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text('& Cafe 77', x + receiptWidth / 2, y, { align: 'center' });
-      y += 3;
-      doc.setFontSize(7);
-      doc.text('★ Pure Vegetarian ★', x + receiptWidth / 2, y, { align: 'center' });
-      y += 5;
+    // Table header
+    doc.setFillColor(240, 240, 240);
+    doc.rect(margin, y - 4, pageWidth - margin * 2, 8, 'F');
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill No.', margin + 3, y);
+    doc.text('Date & Time', margin + 35, y);
+    doc.text('Item', margin + 75, y);
+    doc.text('Qty', margin + 140, y, { align: 'center' });
+    doc.text('Amount', pageWidth - margin - 3, y, { align: 'right' });
+    y += 8;
 
-      // Border
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(x, currentY - 3, receiptWidth, receiptHeight);
+    // Draw line under header
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y - 2, pageWidth - margin, y - 2);
 
-      // Bill info
-      doc.setFontSize(7);
-      doc.text(`Bill: ${bill.billNumber}`, x + 3, y);
-      doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), x + receiptWidth - 3, y, { align: 'right' });
-      y += 4;
+    let grandTotal = 0;
 
-      // Line
-      doc.setLineDashPattern([1, 1], 0);
-      doc.line(x + 3, y, x + receiptWidth - 3, y);
-      y += 3;
+    // Bills data
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
 
-      // Items
-      doc.setFontSize(6);
-      bill.items.forEach(item => {
-        const itemName = item.name.length > 18 ? item.name.substring(0, 18) + '..' : item.name;
-        doc.text(itemName, x + 3, y);
-        doc.text(`${item.quantity}`, x + 50, y, { align: 'center' });
-        doc.text(`₹${(item.price * item.quantity).toFixed(0)}`, x + receiptWidth - 3, y, { align: 'right' });
-        y += 3;
+    filteredBills.forEach((bill, billIndex) => {
+      const billStartY = y;
+      let isFirstItem = true;
+
+      bill.items.forEach((item, itemIndex) => {
+        // Check if we need a new page
+        if (y > pageHeight - 25) {
+          doc.addPage();
+          y = margin;
+          
+          // Repeat header on new page
+          doc.setFillColor(240, 240, 240);
+          doc.rect(margin, y - 4, pageWidth - margin * 2, 8, 'F');
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Bill No.', margin + 3, y);
+          doc.text('Date & Time', margin + 35, y);
+          doc.text('Item', margin + 75, y);
+          doc.text('Qty', margin + 140, y, { align: 'center' });
+          doc.text('Amount', pageWidth - margin - 3, y, { align: 'right' });
+          y += 8;
+          doc.setDrawColor(200, 200, 200);
+          doc.line(margin, y - 2, pageWidth - margin, y - 2);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          isFirstItem = true;
+        }
+
+        // Bill number and date only on first item row
+        if (isFirstItem) {
+          doc.text(bill.billNumber, margin + 3, y);
+          doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), margin + 35, y);
+          isFirstItem = false;
+        }
+
+        // Item details
+        const itemName = item.name.length > 30 ? item.name.substring(0, 30) + '...' : item.name;
+        doc.text(itemName, margin + 75, y);
+        doc.text(item.quantity.toString(), margin + 140, y, { align: 'center' });
+        doc.text(`₹${(item.price * item.quantity).toFixed(0)}`, pageWidth - margin - 3, y, { align: 'right' });
+        y += 5;
       });
 
-      y += 2;
-      doc.line(x + 3, y, x + receiptWidth - 3, y);
-      y += 4;
-
-      // Total
-      doc.setFontSize(9);
+      // Bill total row
       doc.setFont('helvetica', 'bold');
-      doc.text('TOTAL:', x + 3, y);
-      doc.text(`₹${bill.total.toFixed(2)}`, x + receiptWidth - 3, y, { align: 'right' });
+      doc.text('Bill Total:', margin + 115, y);
+      doc.text(`₹${bill.total.toFixed(2)}`, pageWidth - margin - 3, y, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      grandTotal += bill.total;
+      y += 3;
 
-      currentX += receiptWidth + 10;
-      receiptCount++;
+      // Separator line between bills
+      doc.setDrawColor(230, 230, 230);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 5;
     });
+
+    // Grand total
+    y += 5;
+    doc.setFillColor(220, 220, 220);
+    doc.rect(margin, y - 5, pageWidth - margin * 2, 10, 'F');
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('GRAND TOTAL:', margin + 100, y);
+    doc.text(`₹${grandTotal.toFixed(2)}`, pageWidth - margin - 3, y, { align: 'right' });
+    y += 8;
+
+    // Summary
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Bills: ${filteredBills.length}`, margin, y);
+    doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, pageWidth - margin, y, { align: 'right' });
 
     let filename = 'all_bills';
     if (filterType === 'day' && selectedDate) {
