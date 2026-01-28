@@ -92,16 +92,20 @@ const Index = () => {
     setBillNumber(`BL${Date.now().toString().slice(-6)}`);
   };
 
-  const handleAddMenuItem = (newItem: MenuItem) => {
-    addMenuItem(newItem);
+  const handleAddMenuItem = async (newItem: MenuItem) => {
+    await addMenuItem({
+      name: newItem.name,
+      price: newItem.price,
+      category: newItem.category,
+    });
   };
 
-  const handleUpdateMenuItem = (id: string, updates: Partial<MenuItem>) => {
-    updateMenuItem(id, updates);
+  const handleUpdateMenuItem = async (id: string, updates: Partial<MenuItem>) => {
+    await updateMenuItem(id, updates);
   };
 
-  const handleDeleteMenuItem = (id: string) => {
-    deleteMenuItem(id);
+  const handleDeleteMenuItem = async (id: string) => {
+    await deleteMenuItem(id);
     // Also remove from bill if present
     setBillItems(prev => prev.filter(item => item.id !== id));
   };

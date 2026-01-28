@@ -66,20 +66,20 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
   // Filter bills based on selection
   const filteredBills = useMemo(() => {
     if (filterType === 'all') return bills;
-
+    
     if (filterType === 'day' && selectedDate) {
       const dayStart = startOfDay(selectedDate);
       const dayEnd = endOfDay(selectedDate);
-      return bills.filter(bill =>
+      return bills.filter(bill => 
         isWithinInterval(new Date(bill.date), { start: dayStart, end: dayEnd })
       );
     }
-
+    
     if (filterType === 'month' && selectedMonth) {
       const [year, month] = selectedMonth.split('-').map(Number);
       const monthStart = startOfMonth(new Date(year, month - 1));
       const monthEnd = endOfMonth(new Date(year, month - 1));
-      return bills.filter(bill =>
+      return bills.filter(bill => 
         isWithinInterval(new Date(bill.date), { start: monthStart, end: monthEnd })
       );
     }
@@ -87,11 +87,11 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     if (filterType === 'range' && startDate && endDate) {
       const rangeStart = startOfDay(startDate);
       const rangeEnd = endOfDay(endDate);
-      return bills.filter(bill =>
+      return bills.filter(bill => 
         isWithinInterval(new Date(bill.date), { start: rangeStart, end: rangeEnd })
       );
     }
-
+    
     return bills;
   }, [bills, filterType, selectedDate, selectedMonth, startDate, endDate]);
 
@@ -102,23 +102,24 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
 
   // Download as CSV
   const downloadCSV = () => {
-    const headers = ['Date & Time', 'Items', 'Total'];
+    const headers = ['Bill No.', 'Date & Time', 'Items', 'Total'];
     const rows = filteredBills.map(bill => [
+      bill.billNumber,
       format(new Date(bill.date), 'dd MMM yyyy, HH:mm'),
       bill.items.map(item => `${item.name} x${item.quantity}`).join('; '),
       `₹${bill.total.toFixed(2)}`
     ]);
-
+    
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
-
-    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-
+    
     let filename = 'bills';
     if (filterType === 'day' && selectedDate) {
       filename += `_${format(selectedDate, 'yyyy-MM-dd')}`;
@@ -162,7 +163,8 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     y += 5;
 
     doc.setFontSize(8);
-    doc.text(format(new Date(bill.date), 'dd/MM/yyyy HH:mm'), pageWidth / 2, y, { align: 'center' });
+    doc.text(`Bill No: ${bill.billNumber}`, 5, y);
+    doc.text(format(new Date(bill.date), 'dd/MM/yyyy HH:mm'), pageWidth - 5, y, { align: 'right' });
     y += 5;
 
     doc.line(5, y, pageWidth - 5, y);
@@ -259,8 +261,9 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     doc.rect(margin, y - 4, pageWidth - margin * 2, 8, 'F');
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('Date & Time', margin + 3, y);
-    doc.text('Item', margin + 65, y);
+    doc.text('Bill No.', margin + 3, y);
+    doc.text('Date & Time', margin + 35, y);
+    doc.text('Item', margin + 75, y);
     doc.text('Qty', margin + 140, y, { align: 'center' });
     doc.text('Amount', pageWidth - margin - 3, y, { align: 'right' });
     y += 8;
@@ -284,14 +287,15 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
         if (y > pageHeight - 25) {
           doc.addPage();
           y = margin;
-
+          
           // Repeat header on new page
           doc.setFillColor(240, 240, 240);
           doc.rect(margin, y - 4, pageWidth - margin * 2, 8, 'F');
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
-          doc.text('Date & Time', margin + 3, y);
-          doc.text('Item', margin + 65, y);
+          doc.text('Bill No.', margin + 3, y);
+          doc.text('Date & Time', margin + 35, y);
+          doc.text('Item', margin + 75, y);
           doc.text('Qty', margin + 140, y, { align: 'center' });
           doc.text('Amount', pageWidth - margin - 3, y, { align: 'right' });
           y += 8;
@@ -304,13 +308,14 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
 
         // Bill number and date only on first item row
         if (isFirstItem) {
-          doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), margin + 3, y);
+          doc.text(bill.billNumber, margin + 3, y);
+          doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), margin + 35, y);
           isFirstItem = false;
         }
 
         // Item details
         const itemName = item.name.length > 30 ? item.name.substring(0, 30) + '...' : item.name;
-        doc.text(itemName, margin + 65, y);
+        doc.text(itemName, margin + 75, y);
         doc.text(item.quantity.toString(), margin + 140, y, { align: 'center' });
         doc.text(`₹${(item.price * item.quantity).toFixed(0)}`, pageWidth - margin - 3, y, { align: 'right' });
         y += 5;
@@ -363,7 +368,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     if (filteredBills.length === 0) return;
 
     const zip = new JSZip();
-
+    
     filteredBills.forEach(bill => {
       const doc = generateBillPDF(bill);
       const pdfBlob = doc.output('blob');
@@ -371,7 +376,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     });
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
-
+    
     let filename = 'all_bills';
     if (filterType === 'day' && selectedDate) {
       filename = `bills_${format(selectedDate, 'yyyy-MM-dd')}`;
@@ -533,9 +538,9 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
           <div className="flex-1" />
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+            <Button 
+              variant="outline" 
+              size="sm" 
               onClick={downloadCSV}
               disabled={filteredBills.length === 0}
               className="gap-2"
@@ -546,9 +551,9 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
+                <Button 
+                  variant="outline" 
+                  size="sm" 
                   disabled={filteredBills.length === 0}
                   className="gap-2"
                 >
@@ -581,7 +586,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
             </span>
           </div>
         )}
-
+        
         <div className="flex-1 overflow-y-auto">
           {filteredBills.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -593,6 +598,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Bill No.</TableHead>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Items</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -602,7 +608,8 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
               <TableBody>
                 {filteredBills.map((bill) => (
                   <TableRow key={bill.billNumber}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium">{bill.billNumber}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
                       {formatDate(bill.date)}
                     </TableCell>
                     <TableCell>{bill.items.length} items</TableCell>
@@ -638,14 +645,14 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
         <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
           <DialogContent className="sm:max-w-md bg-card">
             <DialogHeader>
-              <DialogTitle>Bill Details</DialogTitle>
+              <DialogTitle>Bill #{selectedBill?.billNumber}</DialogTitle>
             </DialogHeader>
             {selectedBill && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   {formatDate(selectedBill.date)}
                 </p>
-
+                
                 <div className="border border-border rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader>
