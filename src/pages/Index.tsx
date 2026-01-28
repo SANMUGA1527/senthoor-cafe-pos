@@ -7,12 +7,12 @@ import BillSummary from '@/components/BillSummary';
 import PrintableBill from '@/components/PrintableBill';
 import BillHistory from '@/components/BillHistory';
 import { MenuItem, BillItem, Bill } from '@/types/billing';
-import { menuItems as initialMenuItems } from '@/data/menuItems';
 import { useBillHistory } from '@/hooks/useBillHistory';
+import { useMenuItems } from '@/hooks/useMenuItems';
 
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const { menuItems, addMenuItem, updateMenuItem, deleteMenuItem } = useMenuItems();
   const { billHistory, saveBill } = useBillHistory();
   const printRef = useRef<HTMLDivElement>(null);
   const [billNumber, setBillNumber] = useState(`BL${Date.now().toString().slice(-6)}`);
@@ -93,24 +93,17 @@ const Index = () => {
   };
 
   const handleAddMenuItem = (newItem: MenuItem) => {
-    setMenuItems(prev => [...prev, newItem]);
-    toast.success(`${newItem.name} added to menu!`);
+    addMenuItem(newItem);
   };
 
   const handleUpdateMenuItem = (id: string, updates: Partial<MenuItem>) => {
-    setMenuItems(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, ...updates } : item
-      )
-    );
-    toast.success('Menu item updated!');
+    updateMenuItem(id, updates);
   };
 
   const handleDeleteMenuItem = (id: string) => {
-    setMenuItems(prev => prev.filter(item => item.id !== id));
+    deleteMenuItem(id);
     // Also remove from bill if present
     setBillItems(prev => prev.filter(item => item.id !== id));
-    toast.info('Menu item deleted');
   };
 
   return (

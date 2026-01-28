@@ -11,54 +11,64 @@ const PrintableBill = forwardRef<HTMLDivElement, PrintableBillProps>(
     const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     return (
-      <div ref={ref} className="p-8 bg-white text-black max-w-md mx-auto" style={{ fontFamily: 'monospace' }}>
+      <div ref={ref} className="p-4 bg-white text-black max-w-[80mm] mx-auto" style={{ fontFamily: "'Courier New', Courier, monospace" }}>
         {/* Header */}
-        <div className="text-center border-b-2 border-dashed border-black pb-4 mb-4">
-          <h1 className="text-xl font-bold">SRI SENTHOOR</h1>
-          <p className="text-sm">& Cafe 77</p>
-          <p className="text-xs mt-1">★ Pure Vegetarian ★</p>
-          <div className="mt-3 text-xs">
+        <div className="text-center border-b border-dashed border-black pb-3 mb-3">
+          <h1 className="text-lg font-bold">HOTEL SRI SENTHOOR</h1>
+          <p className="text-sm font-semibold">& Cafe 77</p>
+          <p className="text-xs mt-0.5">--- Pure Vegetarian ---</p>
+          <div className="mt-2 text-[10px] leading-tight">
             <p>123 Main Street, City</p>
-            <p>Phone: +91 98765 43210</p>
+            <p>Phone: +91 70106 95808</p>
           </div>
         </div>
 
-        {/* Bill Info */}
-        <div className="flex justify-between text-xs mb-4">
-          <span>Bill No: {billNumber}</span>
-          <span>{new Date().toLocaleString('en-IN')}</span>
+        {/* Date Only (Bill No Removed) */}
+        <div className="text-right text-[10px] mb-3">
+          <span>{new Date().toLocaleString('en-IN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          })}</span>
         </div>
 
-        {/* Items */}
-        <div className="border-t border-b border-dashed border-black py-2 mb-4">
-          <div className="flex justify-between text-xs font-bold mb-2">
-            <span className="w-1/2">Item</span>
-            <span className="w-1/6 text-center">Qty</span>
-            <span className="w-1/6 text-right">Rate</span>
-            <span className="w-1/6 text-right">Amt</span>
-          </div>
-          {items.map((item) => (
-            <div key={item.id} className="flex justify-between text-xs py-1">
-              <span className="w-1/2 truncate">{item.name}</span>
-              <span className="w-1/6 text-center">{item.quantity}</span>
-              <span className="w-1/6 text-right">{item.price}</span>
-              <span className="w-1/6 text-right">{item.price * item.quantity}</span>
-            </div>
-          ))}
+        {/* Items Table */}
+        <div className="border-t border-b border-dashed border-black py-2 mb-3">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="border-b border-dashed border-black/30">
+                <th className="text-left py-1 font-bold w-1/2">Item</th>
+                <th className="text-center py-1 font-bold">Qty</th>
+                <th className="text-right py-1 font-bold">Amt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td className="py-1 text-left align-top">{item.name}</td>
+                  <td className="py-1 text-center align-top">{item.quantity}</td>
+                  <td className="py-1 text-right align-top">{item.price * item.quantity}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        {/* Total - No GST */}
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between font-bold text-lg border-t border-dashed border-black pt-2">
+        {/* Total Display */}
+        <div className="space-y-1">
+          <div className="flex justify-between font-bold text-base border-t border-dashed border-black pt-2">
             <span>TOTAL:</span>
             <span>₹{total.toFixed(2)}</span>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 pt-4 border-t border-dashed border-black">
-          <p className="text-xs">Thank you for dining with us!</p>
-          <p className="text-xs mt-1">Visit Again ❤</p>
+        <div className="text-center mt-6 pt-3 border-t border-dashed border-black">
+          <p className="text-[10px]">Thank you for dining with us!</p>
+          <p className="text-[10px] mt-0.5 font-bold">Visit Again</p>
         </div>
       </div>
     );
