@@ -1,130 +1,66 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Employee {
-  id: string;
   name: string;
-  user_id: string;
+  isLoggedIn: boolean;
 }
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
   employee: Employee | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, employeeName: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  signIn: (username: string, password: string) => { success: boolean; error?: string };
+  signOut: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Hardcoded credentials
+const VALID_USERNAME = 'hotelsrisenthoor';
+const VALID_PASSWORD = '12345678';
+const EMPLOYEE_NAME = 'Sri Senthoor Staff';
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Fetch employee data
-          setTimeout(async () => {
-            const { data } = await supabase
-              .from('employees')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
-            setEmployee(data);
-          }, 0);
-        } else {
-          setEmployee(null);
+    // Check if already logged in
+    const savedSession = localStorage.getItem('pos_session');
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        if (session.isLoggedIn) {
+          setEmployee({ name: session.name, isLoggedIn: true });
         }
-      }
-    );
-
-    // Then check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        supabase
-          .from('employees')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data }) => setEmployee(data));
-      }
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
-  };
-
-  const signUp = async (email: string, password: string, employeeName: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
-
-    if (error) return { error };
-
-    // Create employee record
-    if (data.user) {
-      const { error: employeeError } = await supabase
-        .from('employees')
-        .insert([{ user_id: data.user.id, name: employeeName }]);
-      
-      if (employeeError) {
-        return { error: new Error('Failed to create employee profile') };
+      } catch {
+        localStorage.removeItem('pos_session');
       }
     }
+    setIsLoading(false);
+  }, []);
 
-    return { error: null };
+  const signIn = (username: string, password: string) => {
+    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+      const session = { name: EMPLOYEE_NAME, isLoggedIn: true };
+      localStorage.setItem('pos_session', JSON.stringify(session));
+      setEmployee(session);
+      return { success: true };
+    }
+    return { success: false, error: 'Invalid username or password' };
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = () => {
+    localStorage.removeItem('pos_session');
     setEmployee(null);
-  };
-
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error };
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user,
-        session,
         employee,
         isLoading,
         signIn,
-        signUp,
         signOut,
-        resetPassword,
       }}
     >
       {children}
