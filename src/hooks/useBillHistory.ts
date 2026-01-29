@@ -7,6 +7,7 @@ import { Json } from '@/integrations/supabase/types';
 export const useBillHistory = () => {
   const [billHistory, setBillHistory] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch bills from database on mount
   useEffect(() => {
@@ -15,12 +16,18 @@ export const useBillHistory = () => {
 
   const fetchBills = async () => {
     try {
-      const { data, error } = await supabase
+      setError(null);
+      console.log('Fetching bills from Supabase...');
+      const { data, error: supabaseError } = await supabase
         .from('bills')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
+      console.log('Fetched bills:', data?.length);
 
       const formattedBills: Bill[] = (data || []).map(bill => ({
         billNumber: bill.bill_number,
@@ -32,9 +39,11 @@ export const useBillHistory = () => {
       }));
 
       setBillHistory(formattedBills);
-    } catch (error) {
-      console.error('Error fetching bills:', error);
-      toast.error('Failed to load bill history');
+    } catch (err: any) {
+      console.error('Error fetching bills:', err);
+      const errorMessage = err.message || 'Unknown error occurred';
+      setError(errorMessage);
+      toast.error(`Failed to load bill history: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -42,21 +51,24 @@ export const useBillHistory = () => {
 
   const saveBill = async (bill: Bill) => {
     try {
-      const { error } = await supabase.from('bills').insert([{
+      console.log('Saving bill to Supabase...', bill);
+      const { error: saveError } = await supabase.from('bills').insert([{
         bill_number: bill.billNumber,
         items: bill.items as unknown as Json,
         subtotal: bill.subtotal,
         total: bill.total,
       }]);
 
-      if (error) throw error;
+      if (saveError) {
+        throw saveError;
+      }
 
       // Add to local state immediately
       setBillHistory(prev => [bill, ...prev]);
       return true;
-    } catch (error) {
-      console.error('Error saving bill:', error);
-      toast.error('Failed to save bill to database');
+    } catch (err: any) {
+      console.error('Error saving bill:', err);
+      toast.error(`Failed to save bill: ${err.message || 'Unknown error'}`);
       return false;
     }
   };
@@ -66,5 +78,6 @@ export const useBillHistory = () => {
     isLoading,
     saveBill,
     refetchBills: fetchBills,
+    error,
   };
 };

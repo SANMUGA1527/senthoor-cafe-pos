@@ -18,7 +18,9 @@ const PrintableBill = forwardRef<HTMLDivElement, PrintableBillProps>(
           <p className="text-sm font-semibold">& Cafe 77</p>
           <p className="text-xs mt-0.5">--- Pure Vegetarian ---</p>
           <div className="mt-2 text-[10px] leading-tight">
-            <p>123 Main Street, City</p>
+            <p>Near Nagampatti Toll Plaza,</p>
+            <p>Krishnagiri District,</p>
+            <p>Tamil Nadu – 635203</p>
             <p>Phone: +91 70106 95808</p>
           </div>
         </div>

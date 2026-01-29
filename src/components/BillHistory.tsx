@@ -40,11 +40,13 @@ import { cn } from '@/lib/utils';
 
 interface BillHistoryProps {
   bills: Bill[];
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 type FilterType = 'all' | 'day' | 'month' | 'range';
 
-const BillHistory = ({ bills }: BillHistoryProps) => {
+const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -106,7 +108,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     const rows = filteredBills.map(bill => [
       format(new Date(bill.date), 'dd MMM yyyy, HH:mm'),
       bill.items.map(item => `${item.name} x${item.quantity}`).join('; '),
-      `₹${bill.total.toFixed(2)}`
+      `Rs. ${bill.total.toFixed(2)}`
     ]);
 
     const csvContent = [
@@ -143,18 +145,22 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
 
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('SRI SENTHOOR', pageWidth / 2, y, { align: 'center' });
+    doc.text('HOTEL SRI SENTHOOR', pageWidth / 2, y, { align: 'center' });
     y += 5;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('& Cafe 77', pageWidth / 2, y, { align: 'center' });
+    doc.text('& Cafe 77 &', pageWidth / 2, y, { align: 'center' });
     y += 4;
     doc.setFontSize(8);
-    doc.text('★ Pure Vegetarian ★', pageWidth / 2, y, { align: 'center' });
+    doc.text('--- Pure Vegetarian ---', pageWidth / 2, y, { align: 'center' });
     y += 5;
-    doc.text('123 Main Street, City', pageWidth / 2, y, { align: 'center' });
+    doc.text('Near Nagampatti Toll Plaza,', pageWidth / 2, y, { align: 'center' });
+    y += 3.5;
+    doc.text('Krishnagiri District,', pageWidth / 2, y, { align: 'center' });
+    y += 3.5;
+    doc.text('Tamil Nadu - 635203', pageWidth / 2, y, { align: 'center' });
     y += 3;
-    doc.text('Phone: +91 98765 43210', pageWidth / 2, y, { align: 'center' });
+    doc.text('Phone: +91 70106 95808', pageWidth / 2, y, { align: 'center' });
     y += 5;
 
     doc.setLineDashPattern([1, 1], 0);
@@ -176,10 +182,10 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
 
     doc.setFont('helvetica', 'normal');
     bill.items.forEach(item => {
-      const itemName = item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name;
+      const itemName = item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name;
       doc.text(itemName, 5, y);
       doc.text(item.quantity.toString(), 45, y, { align: 'center' });
-      doc.text(`₹${(item.price * item.quantity).toFixed(0)}`, pageWidth - 5, y, { align: 'right' });
+      doc.text(`Rs. ${(item.price * item.quantity).toFixed(0)}`, pageWidth - 5, y, { align: 'right' });
       y += 4;
     });
 
@@ -190,7 +196,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('TOTAL:', 5, y);
-    doc.text(`₹${bill.total.toFixed(2)}`, pageWidth - 5, y, { align: 'right' });
+    doc.text(`Rs. ${bill.total.toFixed(2)}`, pageWidth - 5, y, { align: 'right' });
     y += 6;
 
     doc.setFontSize(8);
@@ -200,7 +206,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     doc.setFont('helvetica', 'normal');
     doc.text('Thank you for dining with us!', pageWidth / 2, y, { align: 'center' });
     y += 4;
-    doc.text('Visit Again ❤', pageWidth / 2, y, { align: 'center' });
+    doc.text('Visit Again', pageWidth / 2, y, { align: 'center' });
 
     return doc;
   };
@@ -229,14 +235,14 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     // Header
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('SRI SENTHOOR', pageWidth / 2, y, { align: 'center' });
+    doc.text('HOTEL SRI SENTHOOR', pageWidth / 2, y, { align: 'center' });
     y += 6;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text('& Cafe 77', pageWidth / 2, y, { align: 'center' });
-    y += 4;
+    doc.text('& Cafe 77 &', pageWidth / 2, y, { align: 'center' });
+    y += 5;
     doc.setFontSize(10);
-    doc.text('★ Pure Vegetarian ★', pageWidth / 2, y, { align: 'center' });
+    doc.text('--- Pure Vegetarian ---', pageWidth / 2, y, { align: 'center' });
     y += 8;
 
     // Date range info
@@ -258,7 +264,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     doc.setFillColor(240, 240, 240);
     doc.rect(margin, y - 4, pageWidth - margin * 2, 8, 'F');
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont('helvetica', 'bold'); // Keep bold for header text
     doc.text('Date & Time', margin + 3, y);
     doc.text('Item', margin + 65, y);
     doc.text('Qty', margin + 140, y, { align: 'center' });
@@ -289,7 +295,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
           doc.setFillColor(240, 240, 240);
           doc.rect(margin, y - 4, pageWidth - margin * 2, 8, 'F');
           doc.setFontSize(9);
-          doc.setFont('helvetica', 'bold');
+          doc.setFont('helvetica', 'bold'); // Keep bold for header text
           doc.text('Date & Time', margin + 3, y);
           doc.text('Item', margin + 65, y);
           doc.text('Qty', margin + 140, y, { align: 'center' });
@@ -309,17 +315,17 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
         }
 
         // Item details
-        const itemName = item.name.length > 30 ? item.name.substring(0, 30) + '...' : item.name;
+        const itemName = item.name.length > 35 ? item.name.substring(0, 35) + '...' : item.name;
         doc.text(itemName, margin + 65, y);
         doc.text(item.quantity.toString(), margin + 140, y, { align: 'center' });
-        doc.text(`₹${(item.price * item.quantity).toFixed(0)}`, pageWidth - margin - 3, y, { align: 'right' });
+        doc.text(`Rs. ${(item.price * item.quantity).toFixed(0)}`, pageWidth - margin - 3, y, { align: 'right' });
         y += 5;
       });
 
       // Bill total row
       doc.setFont('helvetica', 'bold');
       doc.text('Bill Total:', margin + 115, y);
-      doc.text(`₹${bill.total.toFixed(2)}`, pageWidth - margin - 3, y, { align: 'right' });
+      doc.text(`Rs. ${bill.total.toFixed(2)}`, pageWidth - margin - 3, y, { align: 'right' });
       doc.setFont('helvetica', 'normal');
       grandTotal += bill.total;
       y += 3;
@@ -337,7 +343,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('GRAND TOTAL:', margin + 100, y);
-    doc.text(`₹${grandTotal.toFixed(2)}`, pageWidth - margin - 3, y, { align: 'right' });
+    doc.text(`Rs. ${grandTotal.toFixed(2)}`, pageWidth - margin - 3, y, { align: 'right' });
     y += 8;
 
     // Summary
@@ -402,9 +408,9 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <History className="w-4 h-4" />
-          History ({bills.length})
+        <Button variant="outline" size="sm" className="gap-2" disabled={isLoading}>
+          <History className={cn("w-4 h-4", isLoading && "animate-spin")} />
+          History {isLoading ? '...' : `(${bills.length})`}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl bg-card max-h-[80vh] overflow-hidden flex flex-col">
@@ -577,17 +583,34 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
               Showing {filteredBills.length} bill{filteredBills.length !== 1 ? 's' : ''}
             </span>
             <span className="font-semibold text-primary">
-              Total: ₹{filteredTotal.toFixed(2)}
+              Total: Rs. {filteredTotal.toFixed(2)}
             </span>
           </div>
         )}
 
         <div className="flex-1 overflow-y-auto">
-          {filteredBills.length === 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <History className="w-12 h-12 mx-auto mb-3 animate-spin text-primary" />
+              <p>Loading history...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-destructive">
+              <p className="font-semibold">Error loading history</p>
+              <p className="text-sm mt-1 mb-4">{error}</p>
+            </div>
+          ) : filteredBills.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>No bills yet</p>
               <p className="text-xs mt-1">Printed bills will appear here</p>
+              {bills.length === 0 && (
+                <div className="mt-6 p-4 border rounded-md bg-muted/20 max-w-xs mx-auto text-xs text-left">
+                  <p className="font-semibold mb-1">Debug Info:</p>
+                  <p>Total Bills: {bills.length}</p>
+                  <p>Filter: {filterType}</p>
+                </div>
+              )}
             </div>
           ) : (
             <Table>
@@ -607,7 +630,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
                     </TableCell>
                     <TableCell>{bill.items.length} items</TableCell>
                     <TableCell className="text-right font-semibold text-primary">
-                      ₹{bill.total.toFixed(2)}
+                      Rs. {bill.total.toFixed(2)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -661,7 +684,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
                           <TableCell>{item.name}</TableCell>
                           <TableCell className="text-center">{item.quantity}</TableCell>
                           <TableCell className="text-right">
-                            ₹{(item.price * item.quantity).toFixed(2)}
+                            Rs. {(item.price * item.quantity).toFixed(2)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -671,7 +694,7 @@ const BillHistory = ({ bills }: BillHistoryProps) => {
 
                 <div className="flex justify-between items-center pt-2 border-t border-border font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-primary">₹{selectedBill.total.toFixed(2)}</span>
+                  <span className="text-primary">Rs. {selectedBill.total.toFixed(2)}</span>
                 </div>
               </div>
             )}

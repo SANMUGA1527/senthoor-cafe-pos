@@ -13,7 +13,7 @@ import { useMenuItems } from '@/hooks/useMenuItems';
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const { menuItems, addMenuItem, updateMenuItem, deleteMenuItem } = useMenuItems();
-  const { billHistory, saveBill } = useBillHistory();
+  const { billHistory, saveBill, isLoading, error } = useBillHistory();
   const printRef = useRef<HTMLDivElement>(null);
   const [billNumber, setBillNumber] = useState(`BL${Date.now().toString().slice(-6)}`);
 
@@ -108,7 +108,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header billHistory={<BillHistory bills={billHistory} />} />
+      <Header billHistory={<BillHistory bills={billHistory} isLoading={isLoading} error={error} />} />
 
       <main className="max-w-7xl mx-auto p-4 lg:p-6">
         <div className="flex flex-col lg:flex-row gap-6">
