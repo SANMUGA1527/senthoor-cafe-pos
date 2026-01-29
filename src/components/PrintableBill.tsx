@@ -4,10 +4,11 @@ import { BillItem } from '@/types/billing';
 interface PrintableBillProps {
   items: BillItem[];
   billNumber: string;
+  billedBy?: string;
 }
 
 const PrintableBill = forwardRef<HTMLDivElement, PrintableBillProps>(
-  ({ items, billNumber }, ref) => {
+  ({ items, billNumber, billedBy }, ref) => {
     const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     return (
@@ -24,9 +25,16 @@ const PrintableBill = forwardRef<HTMLDivElement, PrintableBillProps>(
         </div>
 
         {/* Bill Info */}
-        <div className="flex justify-between text-xs mb-4">
-          <span>Bill No: {billNumber}</span>
-          <span>{new Date().toLocaleString('en-IN')}</span>
+        <div className="text-xs mb-4 space-y-1">
+          <div className="flex justify-between">
+            <span>Bill No: {billNumber}</span>
+            <span>{new Date().toLocaleString('en-IN')}</span>
+          </div>
+          {billedBy && (
+            <div className="text-left">
+              <span>Billed by: {billedBy}</span>
+            </div>
+          )}
         </div>
 
         {/* Items */}

@@ -1,12 +1,23 @@
-import { Leaf } from 'lucide-react';
+import { Leaf, LogOut, User } from 'lucide-react';
 import { ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
 interface HeaderProps {
   billHistory?: ReactNode;
 }
-const Header = ({
-  billHistory
-}: HeaderProps) => {
-  return <header className="header-gradient text-primary-foreground py-4 px-6 shadow-warm">
+
+const Header = ({ billHistory }: HeaderProps) => {
+  const { employee, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success('Logged out successfully');
+  };
+
+  return (
+    <header className="header-gradient text-primary-foreground py-4 px-6 shadow-warm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
@@ -25,18 +36,34 @@ const Header = ({
         <div className="flex items-center gap-4">
           {billHistory}
           <div className="text-right">
-            <p className="text-sm opacity-75">Billing System</p>
+            {employee && (
+              <p className="text-sm font-medium flex items-center gap-1 justify-end">
+                <User className="w-4 h-4" />
+                {employee.name}
+              </p>
+            )}
             <p className="text-xs opacity-60">
               {new Date().toLocaleDateString('en-IN', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
             </p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="text-primary-foreground hover:bg-white/20"
+            title="Logout"
+          >
+            <LogOut className="w-5 h-5" />
+          </Button>
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default Header;
