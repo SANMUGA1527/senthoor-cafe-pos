@@ -33,7 +33,7 @@ const Index = () => {
         date: new Date(),
         billedBy: employee?.name,
       };
-      await saveBill(newBill, employee?.id, employee?.name);
+      await saveBill(newBill, undefined, employee?.name);
       toast.success('Bill printed and saved!');
       handleClearBill();
     },
