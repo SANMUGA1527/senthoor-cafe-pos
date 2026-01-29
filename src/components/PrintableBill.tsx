@@ -29,7 +29,6 @@ const PrintableBill = forwardRef<HTMLDivElement, PrintableBillProps>(
         {/* Bill Info */}
         <div className="text-xs mb-4 space-y-1">
           <div className="flex justify-between">
-            <span>Bill No: {billNumber}</span>
             <span>{new Date().toLocaleString('en-IN')}</span>
           </div>
           {billedBy && (

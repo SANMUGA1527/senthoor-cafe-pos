@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
@@ -14,10 +14,42 @@ import { useAuth } from '@/contexts/AuthContext';
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const { menuItems, addMenuItem, updateMenuItem, deleteMenuItem } = useMenuItems();
-  const { billHistory, saveBill, isLoading, error } = useBillHistory();
+  const { billHistory, saveBill, deleteBill, clearAllHistory, isLoading, error } = useBillHistory();
   const { employee } = useAuth();
   const printRef = useRef<HTMLDivElement>(null);
   const [billNumber, setBillNumber] = useState(`BL${Date.now().toString().slice(-6)}`);
+
+  // Monthly Backup Alert
+  useEffect(() => {
+    const checkBackupReminder = () => {
+      const today = new Date();
+      // Format: YYYY-MM
+      const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+      const lastReminder = localStorage.getItem('last_backup_reminder');
+
+      if (lastReminder !== currentMonth) {
+        toast('📅 Backup Reminder', {
+          description: 'Please download your monthly bill history for your records.',
+          duration: Infinity, // Stays until dismissed or clicked
+          action: {
+            label: 'Got it',
+            onClick: () => {
+              localStorage.setItem('last_backup_reminder', currentMonth);
+              toast.dismiss();
+            }
+          },
+          cancel: {
+            label: 'Remind Later',
+            onClick: () => toast.dismiss()
+          }
+        });
+      }
+    };
+
+    // Check on mount
+    const timeout = setTimeout(checkBackupReminder, 2000); // 2-second delay to not crowd initial load
+    return () => clearTimeout(timeout);
+  }, []);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -33,9 +65,11 @@ const Index = () => {
         date: new Date(),
         billedBy: employee?.name,
       };
-      await saveBill(newBill, undefined, employee?.name);
-      toast.success('Bill printed and saved!');
-      handleClearBill();
+      const success = await saveBill(newBill);
+      if (success) {
+        toast.success('Bill printed and saved!');
+        handleClearBill();
+      }
     },
   });
 
@@ -69,6 +103,19 @@ const Index = () => {
     toast.info('Item removed from bill');
   };
 
+  const handleManualAdd = (name: string, price: number) => {
+    const newItem: BillItem = {
+      id: `manual-${Date.now()}`,
+      name: name || 'Custom Item',
+      price: price,
+      category: 'Manual',
+      quantity: 1
+    };
+
+    setBillItems(prev => [...prev, newItem]);
+    toast.success('Manual item added');
+  };
+
   const handleClearBill = () => {
     setBillItems([]);
     setBillNumber(`BL${Date.now().toString().slice(-6)}`);
@@ -94,7 +141,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header billHistory={<BillHistory bills={billHistory} isLoading={isLoading} error={error} />} />
+      <Header billHistory={<BillHistory bills={billHistory} isLoading={isLoading} error={error} onDelete={deleteBill} onClearAll={clearAllHistory} />} />
 
       <main className="max-w-7xl mx-auto p-4 lg:p-6">
         <div className="flex flex-col lg:flex-row gap-6">
@@ -117,6 +164,7 @@ const Index = () => {
               onRemoveItem={handleRemoveItem}
               onClearBill={handleClearBill}
               onPrintBill={handlePrint}
+              onManualAdd={handleManualAdd}
             />
           </div>
         </div>

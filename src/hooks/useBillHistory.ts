@@ -76,10 +76,56 @@ export const useBillHistory = () => {
     }
   };
 
+  const deleteBill = async (billNumber: string) => {
+    try {
+      console.log('Deleting bill:', billNumber);
+      const { error: deleteError } = await supabase
+        .from('bills')
+        .delete()
+        .eq('bill_number', billNumber);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      setBillHistory(prev => prev.filter(bill => bill.billNumber !== billNumber));
+      toast.success('Bill deleted successfully');
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting bill:', err);
+      toast.error(`Failed to delete bill: ${err.message || 'Unknown error'}`);
+      return false;
+    }
+  };
+
+  const clearAllHistory = async () => {
+    try {
+      console.log('Clearing all history...');
+      const { error: deleteError } = await supabase
+        .from('bills')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete where ID is not empty (effectively all)
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      setBillHistory([]);
+      toast.success('All history cleared successfully');
+      return true;
+    } catch (err: any) {
+      console.error('Error clearing history:', err);
+      toast.error(`Failed to clear history: ${err.message || 'Unknown error'}`);
+      return false;
+    }
+  };
+
   return {
     billHistory,
     isLoading,
     saveBill,
+    deleteBill,
+    clearAllHistory,
     refetchBills: fetchBills,
     error,
   };

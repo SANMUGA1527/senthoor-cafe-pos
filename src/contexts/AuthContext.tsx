@@ -8,7 +8,7 @@ interface Employee {
 interface AuthContextType {
   employee: Employee | null;
   isLoading: boolean;
-  signIn: (username: string, password: string) => { success: boolean; error?: string };
+  signIn: (username: string, password: string, staffName?: string) => { success: boolean; error?: string };
   signOut: () => void;
 }
 
@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Hardcoded credentials
 const VALID_USERNAME = 'hotelsrisenthoor';
 const VALID_PASSWORD = '12345678';
-const EMPLOYEE_NAME = 'Sri Senthoor Staff';
+const DEFAULT_EMPLOYEE_NAME = 'Sri Senthoor Staff';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [employee, setEmployee] = useState<Employee | null>(null);
@@ -39,9 +39,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const signIn = (username: string, password: string) => {
+  const signIn = (username: string, password: string, staffName?: string) => {
     if (username === VALID_USERNAME && password === VALID_PASSWORD) {
-      const session = { name: EMPLOYEE_NAME, isLoggedIn: true };
+      const session = { name: staffName || DEFAULT_EMPLOYEE_NAME, isLoggedIn: true };
       localStorage.setItem('pos_session', JSON.stringify(session));
       setEmployee(session);
       return { success: true };

@@ -11,6 +11,7 @@ import { Eye, EyeOff, LogIn, Leaf } from 'lucide-react';
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [staffName, setStaffName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
@@ -20,15 +21,15 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const result = signIn(username, password);
-    
+    const result = signIn(username, password, staffName);
+
     if (result.success) {
       toast.success('Logged in successfully!');
       navigate('/');
     } else {
       toast.error(result.error || 'Login failed');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -48,6 +49,18 @@ const Login = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="staffName">Staff Name (Billed By)</Label>
+              <Input
+                id="staffName"
+                type="text"
+                placeholder="Enter your name"
+                value={staffName}
+                onChange={(e) => setStaffName(e.target.value)}
+                required
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input

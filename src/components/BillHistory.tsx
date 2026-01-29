@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { History, Eye, Download, Calendar, FileText, FileArchive } from 'lucide-react';
+import { History, Eye, Download, Calendar, FileText, FileArchive, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
@@ -42,11 +42,13 @@ interface BillHistoryProps {
   bills: Bill[];
   isLoading?: boolean;
   error?: string | null;
+  onDelete?: (billNumber: string) => Promise<boolean>;
+  onClearAll?: () => Promise<boolean>;
 }
 
 type FilterType = 'all' | 'day' | 'month' | 'range';
 
-const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
+const BillHistory = ({ bills, isLoading = false, error, onDelete, onClearAll }: BillHistoryProps) => {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -104,9 +106,8 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
 
   // Download as CSV
   const downloadCSV = () => {
-    const headers = ['Bill No.', 'Date & Time', 'Items', 'Total'];
+    const headers = ['Date & Time', 'Items', 'Total'];
     const rows = filteredBills.map(bill => [
-      bill.billNumber,
       format(new Date(bill.date), 'dd MMM yyyy, HH:mm'),
       bill.items.map(item => `${item.name} x${item.quantity}`).join('; '),
       `Rs. ${bill.total.toFixed(2)}`
@@ -169,8 +170,7 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
     y += 5;
 
     doc.setFontSize(8);
-    doc.text(`Bill No: ${bill.billNumber}`, 5, y);
-    doc.text(format(new Date(bill.date), 'dd/MM/yyyy HH:mm'), pageWidth - 5, y, { align: 'right' });
+    doc.text(format(new Date(bill.date), 'dd/MM/yyyy HH:mm'), pageWidth / 2, y, { align: 'center' });
     y += 5;
 
     doc.line(5, y, pageWidth - 5, y);
@@ -310,10 +310,9 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
           isFirstItem = true;
         }
 
-        // Bill number and date only on first item row
+        // Date only on first item row
         if (isFirstItem) {
-          doc.text(bill.billNumber, margin + 3, y);
-          doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), margin + 35, y);
+          doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), margin + 3, y);
           isFirstItem = false;
         }
 
@@ -574,6 +573,24 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
                   <FileArchive className="w-4 h-4" />
                   ZIP (individual PDFs)
                 </DropdownMenuItem>
+                {onClearAll && (
+                  <>
+                    <div className="h-px bg-muted my-1" />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (window.confirm('WARNING: This will permanently delete ALL bill history.\n\nAre you sure you want to continue?')) {
+                          if (window.confirm('Please confirm again: This action CANNOT be undone.\n\nDelete EVERYTHING?')) {
+                            onClearAll();
+                          }
+                        }
+                      }}
+                      className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Clear All History
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -607,19 +624,11 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
               <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>No bills yet</p>
               <p className="text-xs mt-1">Printed bills will appear here</p>
-              {bills.length === 0 && (
-                <div className="mt-6 p-4 border rounded-md bg-muted/20 max-w-xs mx-auto text-xs text-left">
-                  <p className="font-semibold mb-1">Debug Info:</p>
-                  <p>Total Bills: {bills.length}</p>
-                  <p>Filter: {filterType}</p>
-                </div>
-              )}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Bill No.</TableHead>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Items</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -629,8 +638,7 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
               <TableBody>
                 {filteredBills.map((bill) => (
                   <TableRow key={bill.billNumber}>
-                    <TableCell className="font-medium">{bill.billNumber}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
+                    <TableCell className="font-medium">
                       {formatDate(bill.date)}
                     </TableCell>
                     <TableCell>{bill.items.length} items</TableCell>
@@ -653,6 +661,19 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
                         >
                           <FileText className="w-4 h-4" />
                         </button>
+                        {onDelete && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this bill? This action cannot be undone.')) {
+                                onDelete(bill.billNumber);
+                              }
+                            }}
+                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                            title="Delete Bill"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
