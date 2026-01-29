@@ -16,6 +16,7 @@ export interface Bill {
   total: number;
   billNumber: string;
   date: Date;
+  billedBy?: string;
 }
 
 export type Category = 'starters' | 'main-course' | 'rice' | 'breads' | 'beverages' | 'desserts';

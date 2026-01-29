@@ -9,34 +9,15 @@ import BillHistory from '@/components/BillHistory';
 import { MenuItem, BillItem, Bill } from '@/types/billing';
 import { useBillHistory } from '@/hooks/useBillHistory';
 import { useMenuItems } from '@/hooks/useMenuItems';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const { menuItems, addMenuItem, updateMenuItem, deleteMenuItem } = useMenuItems();
   const { billHistory, saveBill, isLoading, error } = useBillHistory();
+  const { employee } = useAuth();
   const printRef = useRef<HTMLDivElement>(null);
   const [billNumber, setBillNumber] = useState(`BL${Date.now().toString().slice(-6)}`);
-
-
-  const saveBillToHistory = () => {
-    const total = billItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const bill: Bill = {
-      items: billItems,
-      subtotal: total,
-      gst: 0, // Assuming 0 for now as per current simple logic
-      total: total,
-      billNumber: billNumber,
-      date: new Date()
-    };
-
-    const today = new Date().toISOString().split('T')[0];
-    const storageKey = `pos_sales_${today}`;
-    const existingData = localStorage.getItem(storageKey);
-    const bills: Bill[] = existingData ? JSON.parse(existingData) : [];
-
-    bills.push(bill);
-    localStorage.setItem(storageKey, JSON.stringify(bills));
-  };
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -50,8 +31,9 @@ const Index = () => {
         total: total,
         billNumber,
         date: new Date(),
+        billedBy: employee?.name,
       };
-      await saveBill(newBill);
+      await saveBill(newBill, undefined, employee?.name);
       toast.success('Bill printed and saved!');
       handleClearBill();
     },
@@ -92,16 +74,20 @@ const Index = () => {
     setBillNumber(`BL${Date.now().toString().slice(-6)}`);
   };
 
-  const handleAddMenuItem = (newItem: MenuItem) => {
-    addMenuItem(newItem);
+  const handleAddMenuItem = async (newItem: MenuItem) => {
+    await addMenuItem({
+      name: newItem.name,
+      price: newItem.price,
+      category: newItem.category,
+    });
   };
 
-  const handleUpdateMenuItem = (id: string, updates: Partial<MenuItem>) => {
-    updateMenuItem(id, updates);
+  const handleUpdateMenuItem = async (id: string, updates: Partial<MenuItem>) => {
+    await updateMenuItem(id, updates);
   };
 
-  const handleDeleteMenuItem = (id: string) => {
-    deleteMenuItem(id);
+  const handleDeleteMenuItem = async (id: string) => {
+    await deleteMenuItem(id);
     // Also remove from bill if present
     setBillItems(prev => prev.filter(item => item.id !== id));
   };
@@ -142,6 +128,7 @@ const Index = () => {
           ref={printRef}
           items={billItems}
           billNumber={billNumber}
+          billedBy={employee?.name}
         />
       </div>
 

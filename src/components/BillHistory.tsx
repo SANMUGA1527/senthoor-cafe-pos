@@ -104,8 +104,9 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
 
   // Download as CSV
   const downloadCSV = () => {
-    const headers = ['Date & Time', 'Items', 'Total'];
+    const headers = ['Bill No.', 'Date & Time', 'Items', 'Total'];
     const rows = filteredBills.map(bill => [
+      bill.billNumber,
       format(new Date(bill.date), 'dd MMM yyyy, HH:mm'),
       bill.items.map(item => `${item.name} x${item.quantity}`).join('; '),
       `Rs. ${bill.total.toFixed(2)}`
@@ -116,7 +117,7 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
       ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
 
-    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -168,7 +169,8 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
     y += 5;
 
     doc.setFontSize(8);
-    doc.text(format(new Date(bill.date), 'dd/MM/yyyy HH:mm'), pageWidth / 2, y, { align: 'center' });
+    doc.text(`Bill No: ${bill.billNumber}`, 5, y);
+    doc.text(format(new Date(bill.date), 'dd/MM/yyyy HH:mm'), pageWidth - 5, y, { align: 'right' });
     y += 5;
 
     doc.line(5, y, pageWidth - 5, y);
@@ -310,7 +312,8 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
 
         // Bill number and date only on first item row
         if (isFirstItem) {
-          doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), margin + 3, y);
+          doc.text(bill.billNumber, margin + 3, y);
+          doc.text(format(new Date(bill.date), 'dd/MM/yy HH:mm'), margin + 35, y);
           isFirstItem = false;
         }
 
@@ -616,6 +619,7 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Bill No.</TableHead>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Items</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -625,7 +629,8 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
               <TableBody>
                 {filteredBills.map((bill) => (
                   <TableRow key={bill.billNumber}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium">{bill.billNumber}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
                       {formatDate(bill.date)}
                     </TableCell>
                     <TableCell>{bill.items.length} items</TableCell>
@@ -661,7 +666,7 @@ const BillHistory = ({ bills, isLoading = false, error }: BillHistoryProps) => {
         <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
           <DialogContent className="sm:max-w-md bg-card">
             <DialogHeader>
-              <DialogTitle>Bill Details</DialogTitle>
+              <DialogTitle>Bill #{selectedBill?.billNumber}</DialogTitle>
             </DialogHeader>
             {selectedBill && (
               <div className="space-y-4">
