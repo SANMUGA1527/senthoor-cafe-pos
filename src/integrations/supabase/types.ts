@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           bill_number: string
           created_at: string
+          employee_id: string | null
+          employee_name: string | null
           id: string
           items: Json
           subtotal: number
@@ -26,6 +28,8 @@ export type Database = {
         Insert: {
           bill_number: string
           created_at?: string
+          employee_id?: string | null
+          employee_name?: string | null
           id?: string
           items: Json
           subtotal: number
@@ -34,10 +38,41 @@ export type Database = {
         Update: {
           bill_number?: string
           created_at?: string
+          employee_id?: string | null
+          employee_name?: string | null
           id?: string
           items?: Json
           subtotal?: number
           total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
         }
         Relationships: []
       }

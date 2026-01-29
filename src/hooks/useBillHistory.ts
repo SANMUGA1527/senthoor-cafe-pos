@@ -40,19 +40,22 @@ export const useBillHistory = () => {
     }
   };
 
-  const saveBill = async (bill: Bill) => {
+  const saveBill = async (bill: Bill, employeeId?: string, employeeName?: string) => {
     try {
       const { error } = await supabase.from('bills').insert([{
         bill_number: bill.billNumber,
         items: bill.items as unknown as Json,
         subtotal: bill.subtotal,
         total: bill.total,
+        employee_id: employeeId || null,
+        employee_name: employeeName || null,
       }]);
 
       if (error) throw error;
 
-      // Add to local state immediately
-      setBillHistory(prev => [bill, ...prev]);
+      // Add to local state immediately with employee info
+      const billWithEmployee = { ...bill, billedBy: employeeName };
+      setBillHistory(prev => [billWithEmployee, ...prev]);
       return true;
     } catch (error) {
       console.error('Error saving bill:', error);
