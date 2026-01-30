@@ -196,118 +196,112 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
         </div>
       </div>
 
-      {/* Menu Items Table */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Menu Items - Two Column Grid */}
+      <div className="flex-1 overflow-y-auto p-2">
         {filteredItems.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p className="text-sm">No items found</p>
           </div>
         ) : (
-          <table className="w-full">
-            <tbody>
-              {filteredItems.map((item, index) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-border hover:bg-muted/30 transition-colors group"
-                >
-                  {editingId === item.id ? (
-                    /* Edit Mode */
-                    <td colSpan={4} className="p-3">
-                      <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            {filteredItems.map((item, index) => (
+              <div
+                key={item.id}
+                className="border border-border rounded-lg hover:bg-muted/30 transition-colors group flex items-center"
+              >
+                {editingId === item.id ? (
+                  /* Edit Mode */
+                  <div className="flex items-center gap-2 p-2 w-full">
+                    <div className="veg-indicator flex-shrink-0" />
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="flex-1 h-8"
+                      autoFocus
+                    />
+                    <Input
+                      type="number"
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(e.target.value)}
+                      className="w-20 h-8"
+                      min="1"
+                    />
+                    <button
+                      onClick={() => handleSaveEdit(item.id)}
+                      className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  /* View Mode */
+                  <>
+                    {/* Serial Number */}
+                    <div className="w-8 py-2 px-2 text-center font-medium text-muted-foreground text-sm">
+                      {index + 1}
+                    </div>
+                    
+                    {/* Item Name with Veg Indicator */}
+                    <div 
+                      className="flex-1 py-2 px-1 cursor-pointer"
+                      onClick={() => onAddItem(item)}
+                    >
+                      <div className="flex items-center gap-1.5">
                         <div className="veg-indicator flex-shrink-0" />
-                        <Input
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="flex-1 h-8"
-                          autoFocus
-                        />
-                        <Input
-                          type="number"
-                          value={editPrice}
-                          onChange={(e) => setEditPrice(e.target.value)}
-                          className="w-24 h-8"
-                          min="1"
-                        />
-                        <button
-                          onClick={() => handleSaveEdit(item.id)}
-                          className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <span className="font-medium text-sm truncate">{item.name}</span>
                       </div>
-                    </td>
-                  ) : (
-                    /* View Mode */
-                    <>
-                      {/* Serial Number */}
-                      <td className="w-12 py-3 px-4 text-center font-medium text-muted-foreground">
-                        {index + 1}
-                      </td>
-                      
-                      {/* Item Name with Veg Indicator */}
-                      <td 
-                        className="py-3 px-2 cursor-pointer"
-                        onClick={() => onAddItem(item)}
+                    </div>
+                    
+                    {/* Price */}
+                    <div 
+                      className="py-2 px-2 text-center font-semibold text-primary text-sm cursor-pointer"
+                      onClick={() => onAddItem(item)}
+                    >
+                      ₹{item.price}
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="py-2 px-2 flex items-center gap-0.5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEdit(item);
+                        }}
+                        className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors opacity-0 group-hover:opacity-100"
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="veg-indicator flex-shrink-0" />
-                          <span className="font-medium">{item.name}</span>
-                        </div>
-                      </td>
-                      
-                      {/* Price */}
-                      <td 
-                        className="py-3 px-4 text-center font-semibold text-primary cursor-pointer"
-                        onClick={() => onAddItem(item)}
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteMenuItem(item.id);
+                        }}
+                        className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover:opacity-100"
                       >
-                        ₹{item.price}
-                      </td>
-                      
-                      {/* Actions */}
-                      <td className="w-28 py-3 px-4">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStartEdit(item);
-                            }}
-                            className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteMenuItem(item.id);
-                            }}
-                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAddItem(item);
-                            }}
-                            className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1.5 rounded-lg transition-all"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddItem(item);
+                        }}
+                        className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1 rounded transition-all"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
