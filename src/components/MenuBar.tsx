@@ -143,9 +143,9 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden h-full flex flex-col">
       {/* Header with Search */}
-      <div className="p-4 border-b border-border bg-muted/30 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Menu Items</h2>
+      <div className="p-3 sm:p-4 border-b border-border bg-muted/30 space-y-2 sm:space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-base sm:text-lg">Menu Items</h2>
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-2">
@@ -204,7 +204,7 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
             <p className="text-sm">No items found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {filteredItems.map((item, index) => (
               <div
                 key={item.id}

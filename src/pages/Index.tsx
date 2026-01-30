@@ -143,8 +143,8 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header billHistory={<BillHistory bills={billHistory} isLoading={isLoading} error={error} onDelete={deleteBill} onClearAll={clearAllHistory} />} />
 
-      <main className="h-[calc(100vh-4rem)] p-4 lg:p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+      <main className="h-[calc(100vh-4rem)] p-2 sm:p-4 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full">
           {/* Menu Section */}
           <div className="h-full overflow-hidden">
             <MenuBar

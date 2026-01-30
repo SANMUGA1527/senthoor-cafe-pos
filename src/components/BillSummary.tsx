@@ -36,33 +36,33 @@ const BillSummary = ({
 
   return <div className="bg-card border border-border rounded-2xl h-full flex flex-col">
     {/* Header */}
-    <div className="p-4 border-b border-border">
+    <div className="p-3 sm:p-4 border-b border-border">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="font-semibold text-lg">Current Bill</h2>
+          <h2 className="font-semibold text-base sm:text-lg">Current Bill</h2>
         </div>
         {items.length > 0 && <button onClick={onClearBill} className="text-muted-foreground hover:text-destructive transition-colors p-2">
           <RotateCcw className="w-4 h-4" />
         </button>}
       </div>
-      <p className="text-xs text-muted-foreground mt-1 mb-3">
+      <p className="text-xs text-muted-foreground mt-1 mb-2 sm:mb-3">
         {items.length} item{items.length !== 1 ? 's' : ''} added
       </p>
 
       {/* Manual Entry Form */}
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-1.5 sm:gap-2 items-center">
         <Input
           placeholder="Item Name"
           value={manualName}
           onChange={(e) => setManualName(e.target.value)}
-          className="h-8 text-xs"
+          className="h-8 text-xs flex-1"
         />
         <Input
           type="number"
           placeholder="₹"
           value={manualPrice}
           onChange={(e) => setManualPrice(e.target.value)}
-          className="h-8 w-20 text-xs"
+          className="h-8 w-16 sm:w-20 text-xs"
         />
         <Button size="sm" onClick={handleAddManual} className="h-8 w-8 p-0 shrink-0">
           <PlusCircle className="w-4 h-4" />
