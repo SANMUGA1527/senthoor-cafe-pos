@@ -10,6 +10,8 @@ import { MenuItem, BillItem, Bill } from '@/types/billing';
 import { useBillHistory } from '@/hooks/useBillHistory';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
@@ -143,7 +145,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header billHistory={<BillHistory bills={billHistory} isLoading={isLoading} error={error} onDelete={deleteBill} onClearAll={clearAllHistory} />} />
 
-      <main className="h-[calc(100vh-4rem)] p-2 sm:p-4 lg:p-6">
+      <main className="h-[calc(100vh-4rem)] p-2 sm:p-4 lg:p-6 pb-24 lg:pb-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full">
           {/* Menu Section */}
           <div className="h-full overflow-hidden">
@@ -180,6 +182,19 @@ const Index = () => {
         />
       </div>
 
+      {/* Mobile Sticky Print Bar */}
+      {billItems.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-50 animate-slide-up no-print">
+          <Button
+            onClick={handlePrint}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 shadow-warm"
+            size="lg"
+          >
+            <Printer className="w-6 h-6 mr-2" />
+            Print Bill (₹{billItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)})
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
