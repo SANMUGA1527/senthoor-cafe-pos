@@ -143,10 +143,10 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header billHistory={<BillHistory bills={billHistory} isLoading={isLoading} error={error} onDelete={deleteBill} onClearAll={clearAllHistory} />} />
 
-      <main className="max-w-7xl mx-auto p-4 lg:p-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Menu Section - Single Bar */}
-          <div className="flex-1">
+      <main className="h-[calc(100vh-4rem)] p-4 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+          {/* Menu Section */}
+          <div className="h-full overflow-hidden">
             <MenuBar
               items={menuItems}
               onAddItem={handleAddItem}
@@ -157,7 +157,7 @@ const Index = () => {
           </div>
 
           {/* Bill Section */}
-          <div className="lg:w-96 lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)]">
+          <div className="h-full overflow-hidden">
             <BillSummary
               items={billItems}
               onUpdateQuantity={handleUpdateQuantity}
