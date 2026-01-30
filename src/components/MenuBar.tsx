@@ -141,7 +141,7 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden">
+    <div className="bg-card border border-border rounded-2xl overflow-hidden h-full flex flex-col">
       {/* Header with Search */}
       <div className="p-4 border-b border-border bg-muted/30 space-y-3">
         <div className="flex items-center justify-between">
@@ -185,7 +185,7 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
             ref={searchInputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search menu items... (Type number to quick add)"
+            placeholder="Search menu items..."
             className="pl-10"
           />
           {displayBuffer && (
@@ -196,104 +196,118 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
         </div>
       </div>
 
-      {/* Menu Items List */}
-      <div className="max-h-[calc(100vh-350px)] overflow-y-auto p-4 space-y-3">
+      {/* Menu Items Table */}
+      <div className="flex-1 overflow-y-auto">
         {filteredItems.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p className="text-sm">No items found</p>
           </div>
         ) : (
-          filteredItems.map((item, index) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 group"
-            >
-              {editingId === item.id ? (
-                /* Edit Mode */
-                <div className="flex items-center gap-2 flex-1 p-3 bg-muted/30 rounded-xl border border-border">
-                  <div className="veg-indicator flex-shrink-0" />
-                  <Input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="flex-1 h-8"
-                    autoFocus
-                  />
-                  <Input
-                    type="number"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(e.target.value)}
-                    className="w-20 h-8"
-                    min="1"
-                  />
-                  <button
-                    onClick={() => handleSaveEdit(item.id)}
-                    className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                /* View Mode */
-                <>
-                  {/* Separate Shortcut Box */}
-                  <div
-                    className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-card text-foreground rounded-xl font-mono text-lg font-bold border border-border shadow-sm group-hover:border-primary group-hover:text-primary transition-all"
-                  >
-                    {index + 1}
-                  </div>
-
-                  {/* Item Card */}
-                  <div
-                    className="flex-1 flex items-center justify-between p-3 bg-card rounded-xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
-                    onClick={() => onAddItem(item)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="veg-indicator flex-shrink-0" />
-                      <span className="font-medium text-sm">{item.name}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-primary mr-2">₹{item.price}</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartEdit(item);
-                        }}
-                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+          <table className="w-full">
+            <tbody>
+              {filteredItems.map((item, index) => (
+                <tr
+                  key={item.id}
+                  className="border-b border-border hover:bg-muted/30 transition-colors group"
+                >
+                  {editingId === item.id ? (
+                    /* Edit Mode */
+                    <td colSpan={4} className="p-3">
+                      <div className="flex items-center gap-2">
+                        <div className="veg-indicator flex-shrink-0" />
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="flex-1 h-8"
+                          autoFocus
+                        />
+                        <Input
+                          type="number"
+                          value={editPrice}
+                          onChange={(e) => setEditPrice(e.target.value)}
+                          className="w-24 h-8"
+                          min="1"
+                        />
+                        <button
+                          onClick={() => handleSaveEdit(item.id)}
+                          className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  ) : (
+                    /* View Mode */
+                    <>
+                      {/* Serial Number */}
+                      <td className="w-12 py-3 px-4 text-center font-medium text-muted-foreground">
+                        {index + 1}
+                      </td>
+                      
+                      {/* Item Name with Veg Indicator */}
+                      <td 
+                        className="py-3 px-2 cursor-pointer"
+                        onClick={() => onAddItem(item)}
                       >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteMenuItem(item.id);
-                        }}
-                        className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        <div className="flex items-center gap-2">
+                          <div className="veg-indicator flex-shrink-0" />
+                          <span className="font-medium">{item.name}</span>
+                        </div>
+                      </td>
+                      
+                      {/* Price */}
+                      <td 
+                        className="py-3 px-4 text-center font-semibold text-primary cursor-pointer"
+                        onClick={() => onAddItem(item)}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddItem(item);
-                        }}
-                        className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1.5 rounded-lg transition-all"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          ))
+                        ₹{item.price}
+                      </td>
+                      
+                      {/* Actions */}
+                      <td className="w-28 py-3 px-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartEdit(item);
+                            }}
+                            className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteMenuItem(item.id);
+                            }}
+                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAddItem(item);
+                            }}
+                            className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1.5 rounded-lg transition-all"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
