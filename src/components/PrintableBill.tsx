@@ -14,10 +14,10 @@ const PrintableBill = forwardRef<HTMLDivElement, PrintableBillProps>(
     return (
       <div 
         ref={ref} 
-        className="bg-white text-black"
+        className="printable-bill bg-white text-black"
         style={{ 
           fontFamily: 'monospace',
-          width: '72mm', // 3-inch thermal printer width (80mm - margins)
+          width: '72mm',
           padding: '2mm',
           fontSize: '10px',
           lineHeight: '1.3',
