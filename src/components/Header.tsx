@@ -18,25 +18,28 @@ const Header = ({ billHistory }: HeaderProps) => {
   };
 
   return (
-    <header className="header-gradient text-primary-foreground py-4 px-6 shadow-warm">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-            <Leaf className="w-8 h-8" />
+    <header className="header-gradient text-primary-foreground py-3 px-3 sm:py-4 sm:px-6 shadow-warm">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+        {/* Logo & Title */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
+          <div className="bg-white/20 p-1.5 sm:p-2 rounded-lg backdrop-blur-sm flex-shrink-0">
+            <Leaf className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Hotel Sri Senthoor</h1>
-            <p className="text-sm opacity-90 flex items-center gap-2">
-              <span>& Cafe 77</span>
-              <span className="bg-secondary px-2 py-0.5 rounded-full text-xs font-medium">
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-2xl font-bold tracking-tight truncate">Hotel Sri Senthoor</h1>
+            <p className="text-xs sm:text-sm opacity-90 flex items-center gap-1 sm:gap-2">
+              <span className="hidden sm:inline">& Cafe 77</span>
+              <span className="bg-secondary px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap">
                 Pure Veg
               </span>
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+
+        {/* Right Section */}
+        <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
           {billHistory}
-          <div className="text-right">
+          <div className="text-right hidden sm:block">
             {employee && (
               <p className="text-sm font-medium flex items-center gap-1 justify-end">
                 <User className="w-4 h-4" />
@@ -57,10 +60,10 @@ const Header = ({ billHistory }: HeaderProps) => {
             variant="ghost"
             size="icon"
             onClick={handleLogout}
-            className="text-primary-foreground hover:bg-white/20"
+            className="text-primary-foreground hover:bg-white/20 h-8 w-8 sm:h-10 sm:w-10"
             title="Logout"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
         </div>
       </div>
