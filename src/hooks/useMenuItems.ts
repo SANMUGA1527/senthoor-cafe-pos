@@ -3,9 +3,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { MenuItem } from '@/types/billing';
 import { toast } from 'sonner';
 
+const CACHE_KEY = 'cached_menu_items';
+
+const getCachedItems = (): MenuItem[] => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    return cached ? JSON.parse(cached) : [];
+  } catch {
+    return [];
+  }
+};
+
+const setCachedItems = (items: MenuItem[]) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(items));
+  } catch (e) {
+    console.warn('Failed to cache menu items:', e);
+  }
+};
+
 export const useMenuItems = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
 
   const fetchMenuItems = async (retryCount = 0) => {
     try {
@@ -24,6 +44,8 @@ export const useMenuItems = () => {
       }));
 
       setMenuItems(items);
+      setCachedItems(items); // Cache on success
+      setIsOffline(false);
     } catch (error: any) {
       console.error('Error fetching menu items:', error);
       
@@ -34,8 +56,16 @@ export const useMenuItems = () => {
         return;
       }
       
-      const isNetworkError = error.message?.includes('fetch') || error.name === 'TypeError';
-      toast.error(isNetworkError ? 'Network error. Check your connection.' : 'Failed to load menu');
+      // Load from cache if network fails
+      const cached = getCachedItems();
+      if (cached.length > 0) {
+        setMenuItems(cached);
+        setIsOffline(true);
+        toast.info('Offline mode - using cached menu');
+      } else {
+        const isNetworkError = error.message?.includes('fetch') || error.name === 'TypeError';
+        toast.error(isNetworkError ? 'Network error. No cached data available.' : 'Failed to load menu');
+      }
     } finally {
       setLoading(false);
     }
@@ -121,6 +151,7 @@ export const useMenuItems = () => {
   return {
     menuItems,
     loading,
+    isOffline,
     addMenuItem,
     updateMenuItem,
     deleteMenuItem,
