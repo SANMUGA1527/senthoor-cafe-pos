@@ -14,10 +14,10 @@ export const useBillHistory = () => {
     fetchBills();
   }, []);
 
-  const fetchBills = async () => {
+  const fetchBills = async (retryCount = 0) => {
     try {
       setError(null);
-      console.log('Fetching bills from Supabase...');
+      console.log('Fetching bills...');
       const { data, error: supabaseError } = await supabase
         .from('bills')
         .select('*')
@@ -41,9 +41,20 @@ export const useBillHistory = () => {
       setBillHistory(formattedBills);
     } catch (err: any) {
       console.error('Error fetching bills:', err);
-      const errorMessage = err.message || 'Unknown error occurred';
+      
+      // Retry on network errors
+      if (retryCount < 2 && (err.message?.includes('fetch') || err.name === 'TypeError')) {
+        console.log(`Retrying... attempt ${retryCount + 1}`);
+        setTimeout(() => fetchBills(retryCount + 1), 1000);
+        return;
+      }
+      
+      const isNetworkError = err.message?.includes('fetch') || err.name === 'TypeError';
+      const errorMessage = isNetworkError 
+        ? 'Network error. Check your connection.' 
+        : (err.message || 'Unknown error');
       setError(errorMessage);
-      toast.error(`Failed to load bill history: ${errorMessage}`);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

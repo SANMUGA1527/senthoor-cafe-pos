@@ -7,7 +7,7 @@ export const useMenuItems = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchMenuItems = async () => {
+  const fetchMenuItems = async (retryCount = 0) => {
     try {
       const { data, error } = await supabase
         .from('menu_items')
@@ -24,9 +24,18 @@ export const useMenuItems = () => {
       }));
 
       setMenuItems(items);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching menu items:', error);
-      toast.error('Failed to load menu items');
+      
+      // Retry on network errors
+      if (retryCount < 2 && (error.message?.includes('fetch') || error.name === 'TypeError')) {
+        console.log(`Retrying menu items... attempt ${retryCount + 1}`);
+        setTimeout(() => fetchMenuItems(retryCount + 1), 1000);
+        return;
+      }
+      
+      const isNetworkError = error.message?.includes('fetch') || error.name === 'TypeError';
+      toast.error(isNetworkError ? 'Network error. Check your connection.' : 'Failed to load menu');
     } finally {
       setLoading(false);
     }
