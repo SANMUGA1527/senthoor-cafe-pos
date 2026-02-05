@@ -15,7 +15,7 @@ import { Printer } from 'lucide-react';
 
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
-  const { menuItems, addMenuItem, updateMenuItem, deleteMenuItem } = useMenuItems();
+  const { menuItems, addMenuItem, updateMenuItem, deleteMenuItem, isOffline } = useMenuItems();
   const { billHistory, saveBill, deleteBill, clearAllHistory, isLoading, error } = useBillHistory();
   const { employee } = useAuth();
   const printRef = useRef<HTMLDivElement>(null);
@@ -143,7 +143,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header billHistory={<BillHistory bills={billHistory} isLoading={isLoading} error={error} onDelete={deleteBill} onClearAll={clearAllHistory} />} />
+      <Header billHistory={<BillHistory bills={billHistory} isLoading={isLoading} error={error} onDelete={deleteBill} onClearAll={clearAllHistory} />} isOffline={isOffline} />
 
       <main className="h-[calc(100vh-4rem)] p-2 sm:p-4 lg:p-6 pb-24 lg:pb-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full">

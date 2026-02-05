@@ -1,4 +1,4 @@
-import { Leaf, LogOut, User } from 'lucide-react';
+import { Leaf, LogOut, User, WifiOff } from 'lucide-react';
 import { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,10 @@ import SettingsDialog from './SettingsDialog';
 
 interface HeaderProps {
   billHistory?: ReactNode;
+  isOffline?: boolean;
 }
 
-const Header = ({ billHistory }: HeaderProps) => {
+const Header = ({ billHistory, isOffline }: HeaderProps) => {
   const { employee, signOut } = useAuth();
 
   const handleLogout = async () => {
@@ -26,7 +27,15 @@ const Header = ({ billHistory }: HeaderProps) => {
             <Leaf className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-base sm:text-2xl font-bold tracking-tight truncate">Hotel Sri Senthoor</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-2xl font-bold tracking-tight truncate">Hotel Sri Senthoor</h1>
+              {isOffline && (
+                <span className="bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium flex items-center gap-1">
+                  <WifiOff className="w-3 h-3" />
+                  <span className="hidden sm:inline">Offline</span>
+                </span>
+              )}
+            </div>
             <p className="text-xs sm:text-sm opacity-90 flex items-center gap-1 sm:gap-2">
               <span className="hidden sm:inline">& Cafe 77</span>
               <span className="bg-secondary px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap">
