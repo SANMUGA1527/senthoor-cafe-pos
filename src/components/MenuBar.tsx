@@ -139,6 +139,21 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
   const [quantity, setQuantity] = useState('1');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex(i => i.id === active.id);
+    const newIndex = items.findIndex(i => i.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const newOrder = arrayMove(items, oldIndex, newIndex);
+    onReorderItems(newOrder);
+  };
+
   // Use ref for buffer logic to avoid effect re-creation/cleanup on every keystroke
   const [displayBuffer, setDisplayBuffer] = useState('');
   const keyBufferRef = useRef('');
