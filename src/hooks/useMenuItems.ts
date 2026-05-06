@@ -32,6 +32,7 @@ export const useMenuItems = () => {
       const { data, error } = await supabase
         .from('menu_items')
         .select('*')
+        .order('display_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true });
 
       if (error) throw error;
