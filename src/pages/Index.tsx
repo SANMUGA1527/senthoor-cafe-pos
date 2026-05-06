@@ -15,7 +15,7 @@ import { Printer } from 'lucide-react';
 
 const Index = () => {
   const [billItems, setBillItems] = useState<BillItem[]>([]);
-  const { menuItems, addMenuItem, updateMenuItem, deleteMenuItem, isOffline } = useMenuItems();
+  const { menuItems, addMenuItem, updateMenuItem, deleteMenuItem, reorderMenuItems, isOffline } = useMenuItems();
   const { billHistory, saveBill, deleteBill, clearAllHistory, isLoading, error } = useBillHistory();
   const { employee } = useAuth();
   const printRef = useRef<HTMLDivElement>(null);
@@ -155,6 +155,7 @@ const Index = () => {
               onUpdateMenuItem={handleUpdateMenuItem}
               onDeleteMenuItem={handleDeleteMenuItem}
               onAddNewItem={handleAddMenuItem}
+              onReorderItems={reorderMenuItems}
             />
           </div>
 

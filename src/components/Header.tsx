@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import SettingsDialog from './SettingsDialog';
+
 
 interface HeaderProps {
   billHistory?: ReactNode;
@@ -64,7 +64,7 @@ const Header = ({ billHistory, isOffline }: HeaderProps) => {
               })}
             </p>
           </div>
-          <SettingsDialog />
+          
           <Button
             variant="ghost"
             size="icon"

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Search, GripVertical } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
@@ -10,6 +10,23 @@ import {
   DialogTrigger,
 } from './ui/dialog';
 import { MenuItem } from '@/types/billing';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface MenuBarProps {
   items: MenuItem[];
@@ -17,9 +34,98 @@ interface MenuBarProps {
   onUpdateMenuItem: (id: string, updates: Partial<MenuItem>) => void;
   onDeleteMenuItem: (id: string) => void;
   onAddNewItem: (item: MenuItem) => void;
+  onReorderItems: (items: MenuItem[]) => void;
 }
 
-const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNewItem }: MenuBarProps) => {
+interface SortableRowProps {
+  item: MenuItem;
+  index: number;
+  isEditing: boolean;
+  editName: string;
+  editPrice: string;
+  setEditName: (v: string) => void;
+  setEditPrice: (v: string) => void;
+  onStartEdit: (item: MenuItem) => void;
+  onSaveEdit: (id: string) => void;
+  onCancelEdit: () => void;
+  onAddItem: (item: MenuItem) => void;
+  onDeleteMenuItem: (id: string) => void;
+  dragEnabled: boolean;
+}
+
+const SortableRow = ({
+  item, index, isEditing, editName, editPrice, setEditName, setEditPrice,
+  onStartEdit, onSaveEdit, onCancelEdit, onAddItem, onDeleteMenuItem, dragEnabled,
+}: SortableRowProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+    disabled: !dragEnabled || isEditing,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="border border-border rounded-lg hover:bg-muted/30 transition-colors group flex items-center bg-card"
+    >
+      {isEditing ? (
+        <div className="flex items-center gap-2 p-2 w-full">
+          <div className="veg-indicator flex-shrink-0" />
+          <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="flex-1 h-8" autoFocus />
+          <Input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="w-20 h-8" min="1" />
+          <button onClick={() => onSaveEdit(item.id)} className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors">
+            <Check className="w-4 h-4" />
+          </button>
+          <button onClick={onCancelEdit} className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <>
+          {dragEnabled && (
+            <button
+              {...attributes}
+              {...listeners}
+              className="px-1.5 py-2 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+              aria-label="Drag to reorder"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
+          )}
+          <div className="w-8 py-2 px-2 text-center font-medium text-muted-foreground text-sm">{index + 1}</div>
+          <div className="flex-1 py-2 px-1 cursor-pointer" onClick={() => onAddItem(item)}>
+            <div className="flex items-center gap-1.5">
+              <div className="veg-indicator flex-shrink-0" />
+              <span className="font-medium text-sm truncate">{item.name}</span>
+            </div>
+          </div>
+          <div className="py-2 px-2 text-center font-semibold text-primary text-sm cursor-pointer" onClick={() => onAddItem(item)}>
+            ₹{item.price}
+          </div>
+          <div className="py-2 px-2 flex items-center gap-0.5">
+            <button onClick={(e) => { e.stopPropagation(); onStartEdit(item); }} className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors opacity-0 group-hover:opacity-100">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onDeleteMenuItem(item.id); }} className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover:opacity-100">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onAddItem(item); }} className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1 rounded transition-all">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNewItem, onReorderItems }: MenuBarProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
@@ -32,6 +138,21 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [quantity, setQuantity] = useState('1');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex(i => i.id === active.id);
+    const newIndex = items.findIndex(i => i.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const newOrder = arrayMove(items, oldIndex, newIndex);
+    onReorderItems(newOrder);
+  };
 
   // Use ref for buffer logic to avoid effect re-creation/cleanup on every keystroke
   const [displayBuffer, setDisplayBuffer] = useState('');
@@ -204,104 +325,34 @@ const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNe
             <p className="text-sm">No items found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {filteredItems.map((item, index) => (
-              <div
-                key={item.id}
-                className="border border-border rounded-lg hover:bg-muted/30 transition-colors group flex items-center"
-              >
-                {editingId === item.id ? (
-                  /* Edit Mode */
-                  <div className="flex items-center gap-2 p-2 w-full">
-                    <div className="veg-indicator flex-shrink-0" />
-                    <Input
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="flex-1 h-8"
-                      autoFocus
-                    />
-                    <Input
-                      type="number"
-                      value={editPrice}
-                      onChange={(e) => setEditPrice(e.target.value)}
-                      className="w-20 h-8"
-                      min="1"
-                    />
-                    <button
-                      onClick={() => handleSaveEdit(item.id)}
-                      className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  /* View Mode */
-                  <>
-                    {/* Serial Number */}
-                    <div className="w-8 py-2 px-2 text-center font-medium text-muted-foreground text-sm">
-                      {index + 1}
-                    </div>
-                    
-                    {/* Item Name with Veg Indicator */}
-                    <div 
-                      className="flex-1 py-2 px-1 cursor-pointer"
-                      onClick={() => onAddItem(item)}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <div className="veg-indicator flex-shrink-0" />
-                        <span className="font-medium text-sm truncate">{item.name}</span>
-                      </div>
-                    </div>
-                    
-                    {/* Price */}
-                    <div 
-                      className="py-2 px-2 text-center font-semibold text-primary text-sm cursor-pointer"
-                      onClick={() => onAddItem(item)}
-                    >
-                      ₹{item.price}
-                    </div>
-                    
-                    {/* Actions */}
-                    <div className="py-2 px-2 flex items-center gap-0.5">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartEdit(item);
-                        }}
-                        className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteMenuItem(item.id);
-                        }}
-                        className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddItem(item);
-                        }}
-                        className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1 rounded transition-all"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </>
-                )}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={filteredItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {filteredItems.map((item, index) => (
+                  <SortableRow
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    isEditing={editingId === item.id}
+                    editName={editName}
+                    editPrice={editPrice}
+                    setEditName={setEditName}
+                    setEditPrice={setEditPrice}
+                    onStartEdit={handleStartEdit}
+                    onSaveEdit={handleSaveEdit}
+                    onCancelEdit={handleCancelEdit}
+                    onAddItem={onAddItem}
+                    onDeleteMenuItem={onDeleteMenuItem}
+                    dragEnabled={searchQuery.trim() === ''}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
