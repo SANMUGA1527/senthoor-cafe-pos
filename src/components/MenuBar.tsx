@@ -37,6 +37,94 @@ interface MenuBarProps {
   onReorderItems: (items: MenuItem[]) => void;
 }
 
+interface SortableRowProps {
+  item: MenuItem;
+  index: number;
+  isEditing: boolean;
+  editName: string;
+  editPrice: string;
+  setEditName: (v: string) => void;
+  setEditPrice: (v: string) => void;
+  onStartEdit: (item: MenuItem) => void;
+  onSaveEdit: (id: string) => void;
+  onCancelEdit: () => void;
+  onAddItem: (item: MenuItem) => void;
+  onDeleteMenuItem: (id: string) => void;
+  dragEnabled: boolean;
+}
+
+const SortableRow = ({
+  item, index, isEditing, editName, editPrice, setEditName, setEditPrice,
+  onStartEdit, onSaveEdit, onCancelEdit, onAddItem, onDeleteMenuItem, dragEnabled,
+}: SortableRowProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+    disabled: !dragEnabled || isEditing,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="border border-border rounded-lg hover:bg-muted/30 transition-colors group flex items-center bg-card"
+    >
+      {isEditing ? (
+        <div className="flex items-center gap-2 p-2 w-full">
+          <div className="veg-indicator flex-shrink-0" />
+          <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="flex-1 h-8" autoFocus />
+          <Input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="w-20 h-8" min="1" />
+          <button onClick={() => onSaveEdit(item.id)} className="p-1.5 text-secondary hover:bg-secondary/10 rounded-lg transition-colors">
+            <Check className="w-4 h-4" />
+          </button>
+          <button onClick={onCancelEdit} className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <>
+          {dragEnabled && (
+            <button
+              {...attributes}
+              {...listeners}
+              className="px-1.5 py-2 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+              aria-label="Drag to reorder"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
+          )}
+          <div className="w-8 py-2 px-2 text-center font-medium text-muted-foreground text-sm">{index + 1}</div>
+          <div className="flex-1 py-2 px-1 cursor-pointer" onClick={() => onAddItem(item)}>
+            <div className="flex items-center gap-1.5">
+              <div className="veg-indicator flex-shrink-0" />
+              <span className="font-medium text-sm truncate">{item.name}</span>
+            </div>
+          </div>
+          <div className="py-2 px-2 text-center font-semibold text-primary text-sm cursor-pointer" onClick={() => onAddItem(item)}>
+            ₹{item.price}
+          </div>
+          <div className="py-2 px-2 flex items-center gap-0.5">
+            <button onClick={(e) => { e.stopPropagation(); onStartEdit(item); }} className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors opacity-0 group-hover:opacity-100">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onDeleteMenuItem(item.id); }} className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover:opacity-100">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onAddItem(item); }} className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground p-1 rounded transition-all">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNewItem, onReorderItems }: MenuBarProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
