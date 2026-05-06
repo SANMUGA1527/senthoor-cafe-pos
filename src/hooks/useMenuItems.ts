@@ -170,6 +170,7 @@ export const useMenuItems = () => {
     addMenuItem,
     updateMenuItem,
     deleteMenuItem,
+    reorderMenuItems,
     refetch: fetchMenuItems,
   };
 };
