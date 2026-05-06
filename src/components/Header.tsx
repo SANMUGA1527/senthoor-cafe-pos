@@ -64,7 +64,7 @@ const Header = ({ billHistory, isOffline }: HeaderProps) => {
               })}
             </p>
           </div>
-          <SettingsDialog />
+          
           <Button
             variant="ghost"
             size="icon"
