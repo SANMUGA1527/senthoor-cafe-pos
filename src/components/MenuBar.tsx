@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Search, GripVertical } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import {
@@ -10,6 +10,23 @@ import {
   DialogTrigger,
 } from './ui/dialog';
 import { MenuItem } from '@/types/billing';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface MenuBarProps {
   items: MenuItem[];
@@ -17,6 +34,7 @@ interface MenuBarProps {
   onUpdateMenuItem: (id: string, updates: Partial<MenuItem>) => void;
   onDeleteMenuItem: (id: string) => void;
   onAddNewItem: (item: MenuItem) => void;
+  onReorderItems: (items: MenuItem[]) => void;
 }
 
 const MenuBar = ({ items, onAddItem, onUpdateMenuItem, onDeleteMenuItem, onAddNewItem }: MenuBarProps) => {
