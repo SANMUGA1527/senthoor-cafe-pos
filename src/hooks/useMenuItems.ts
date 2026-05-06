@@ -145,6 +145,20 @@ export const useMenuItems = () => {
     }
   };
 
+  const reorderMenuItems = async (orderedItems: MenuItem[]) => {
+    // Optimistic update
+    setMenuItems(orderedItems);
+    try {
+      const updates = orderedItems.map((item, idx) =>
+        supabase.from('menu_items').update({ display_order: idx + 1 }).eq('id', item.id)
+      );
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error reordering menu items:', error);
+      toast.error('Failed to save new order');
+    }
+  };
+
   useEffect(() => {
     fetchMenuItems();
   }, []);
